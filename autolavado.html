@@ -103,44 +103,51 @@
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        /* ── Logo ── */
-        .logo-wrap { text-align:center; margin-bottom:32px; animation: fadeInDown 0.8s ease forwards; }
-        .logo-inner { position: relative; display: inline-block; overflow: hidden; border-radius: 20px; }
-        .logo {
-            max-width:280px; width:100%; mix-blend-mode:screen;
-            animation: floatY 6s ease-in-out infinite, luxuryGlow 4s ease-in-out infinite;
-            position: relative; z-index: 2;
-        }
-        @keyframes floatY {
-            0%,100% { transform:translateY(0); }
-            50%     { transform:translateY(-6px); }
-        }
-        @keyframes luxuryGlow {
-            0%,100% { filter: drop-shadow(0 0 15px rgba(14,165,233,.2)); }
-            50%     { filter: drop-shadow(0 0 45px rgba(14,165,233,.6)); }
-        }
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* ── Minimalist Modern Luxury ── */
+        .logo-wrap { text-align:center; margin-bottom:32px; animation: fadeInDown 0.8s ease forwards; perspective: 1000px; }
+        .logo-inner { position: relative; display: inline-block; }
 
-        /* ── Metallic Sweep ── */
+        /* An elegant light sweep that passes over the logo softly */
         .logo-inner::after {
             content: '';
             position: absolute;
-            top: 0; left: -150%;
-            width: 100%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
             transform: skewX(-25deg);
-            animation: chromeSweep 5s infinite;
+            animation: slowShine 7s ease-in-out infinite;
             pointer-events: none;
             z-index: 4;
-            mix-blend-mode: color-dodge;
+            mix-blend-mode: overlay;
         }
-        @keyframes chromeSweep {
-            0%, 70% { left: -150%; opacity: 0; }
-            85% { left: 150%; opacity: 1; }
-            100% { left: 150%; opacity: 0; }
+
+        .logo {
+            max-width:280px; width:100%; mix-blend-mode:screen;
+            animation: elegantFloat 8s ease-in-out infinite;
+            position: relative; z-index: 2;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes elegantFloat {
+            0%, 100% { 
+                transform: translateY(0) rotateX(5deg) rotateY(-5deg); 
+                filter: drop-shadow(0 15px 25px rgba(14,165,233,0.15));
+            }
+            50% { 
+                transform: translateY(-12px) rotateX(-5deg) rotateY(5deg); 
+                filter: drop-shadow(0 30px 35px rgba(14,165,233,0.3));
+            }
+        }
+
+        @keyframes slowShine {
+            0%, 20% { left: -100%; opacity: 0; }
+            50% { opacity: 1; }
+            80%, 100% { left: 200%; opacity: 0; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* ── Typography & Header ── */
