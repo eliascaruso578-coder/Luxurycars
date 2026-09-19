@@ -105,10 +105,12 @@
 
         /* ── Logo ── */
         .logo-wrap { text-align:center; margin-bottom:32px; animation: fadeInDown 0.8s ease forwards; }
+        .logo-inner { position: relative; display: inline-block; }
         .logo {
             max-width:280px; width:100%; mix-blend-mode:screen;
             filter: drop-shadow(0 0 35px rgba(14,165,233,.4));
             animation: floatY 6s ease-in-out infinite;
+            position: relative; z-index: 2;
         }
         @keyframes floatY {
             0%,100% { transform:translateY(0); }
@@ -117,6 +119,49 @@
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Foam Animation ── */
+        .foam-bubble {
+            position: absolute;
+            bottom: 10px;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.2) 60%, transparent 80%);
+            border-radius: 50%;
+            animation: foamFloat infinite ease-in;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+            z-index: 3;
+        }
+        .b1 { width: 40px; height: 40px; left: 10%; animation-duration: 3s; animation-delay: 0s; }
+        .b2 { width: 25px; height: 25px; left: 30%; animation-duration: 4s; animation-delay: 1.5s; }
+        .b3 { width: 50px; height: 50px; left: 60%; animation-duration: 3.5s; animation-delay: 0.5s; }
+        .b4 { width: 30px; height: 30px; left: 80%; animation-duration: 4.5s; animation-delay: 2s; }
+        .b5 { width: 20px; height: 20px; left: 45%; animation-duration: 3.2s; animation-delay: 1s; }
+
+        @keyframes foamFloat {
+            0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(-100px) scale(1.5) translateX(15px); opacity: 0; }
+        }
+
+        .logo-shine {
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-25deg);
+            animation: shine 4s infinite;
+            pointer-events: none;
+            z-index: 4;
+            mix-blend-mode: overlay;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
         }
 
         /* ── Typography & Header ── */
@@ -500,7 +545,15 @@
     <div class="page active" id="step1">
 
         <div class="logo-wrap">
-            <img src="logo.png" alt="Luxury Cars" class="logo">
+            <div class="logo-inner">
+                <img src="logo.png" alt="Luxury Cars" class="logo">
+                <div class="logo-shine"></div>
+                <div class="foam-bubble b1"></div>
+                <div class="foam-bubble b2"></div>
+                <div class="foam-bubble b3"></div>
+                <div class="foam-bubble b4"></div>
+                <div class="foam-bubble b5"></div>
+            </div>
             <div style="margin-top: 8px;">
                 <button onclick="openMapModal()" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: var(--text-secondary); font-size: 12px; transition: 0.3s; backdrop-filter: blur(10px); font-family: 'Outfit', sans-serif;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
