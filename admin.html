@@ -452,11 +452,11 @@
             try {
                 const snap = await db.collection("bookings")
                     .where("date", "==", date)
-                    .orderBy("time", "asc")
                     .get();
                 snap.forEach(doc => {
                     bookings.push({ id: doc.id, ...doc.data() });
                 });
+                bookings.sort((a, b) => a.time.localeCompare(b.time));
             } catch (e) {
                 console.error("Firebase error", e);
                 bookings = loadLocalBookingsMock(date);
