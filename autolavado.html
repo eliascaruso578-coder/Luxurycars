@@ -620,6 +620,13 @@
             <div class="field date-wrap">
                 <label class="field-label" for="fecha-agendamento">Data</label>
                 <input type="date" id="fecha-agendamento" class="date-input" onchange="renderSlots()">
+                <script>
+                    // Impedir seleccionar fechas en el pasado
+                    var today = new Date();
+                    // Ajustar a timezone local
+                    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+                    document.getElementById('fecha-agendamento').min = today.toISOString().split('T')[0];
+                </script>
             </div>
 
             <div class="field" style="margin-top: 32px;">
@@ -1116,7 +1123,7 @@ if (firebaseConfig.apiKey !== "SUA_API_KEY") {
 }
 
 /* ════════ TIME SLOTS ════════ */
-var MAX_VAGAS = 1; // Only 1 car can be serviced at a time
+var MAX_VAGAS = 2; // 2 workers (vagas) available
 var OPEN_MINUTES = 8 * 60;   // 08:00
 var CLOSE_MINUTES = 18 * 60; // 18:00
 var selDuration = 90;
@@ -1137,6 +1144,16 @@ function minutesToTime(mins) {
     var h = Math.floor(mins / 60);
     var m = mins % 60;
     return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+}
+
+function formatAMPM(timeStr) {
+    var parts = timeStr.split(':');
+    var h = parseInt(parts[0]);
+    var m = parts[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12; // el 0 debe ser 12
+    return (h < 10 ? "0" + h : h) + ":" + m + " " + ampm;
 }
 
 function generateAllSlots() {
@@ -1220,35 +1237,37 @@ async function renderSlots() {
 
     grid.innerHTML = "";
     generateAllSlots().forEach(m => {
-        let fits = true;
+        let maxAvailable = MAX_VAGAS;
+        for (let checkM = m; checkM < m + myDuration; checkM += 30) {
+            let used = usage[checkM] || 0;
+            let avail = MAX_VAGAS - used;
+            if (avail < maxAvailable) maxAvailable = avail;
+        }
+
+        let fits = maxAvailable > 0;
+        let bufferMins = 120; // 2 horas de anticipación mínima
         
-        if (isToday && m < currentMins) {
-            fits = false; // Block if the slot has already passed today
+        if (isToday && m < currentMins + bufferMins) {
+            fits = false; // Block if the slot has already passed today or is too soon
         } else if (m + myDuration > CLOSE_MINUTES) {
             fits = false; // Would finish after closing time
-        } else {
-            for (let checkM = m; checkM < m + myDuration; checkM += 30) {
-                if (usage[checkM] >= MAX_VAGAS) {
-                    fits = false;
-                    break;
-                }
-            }
         }
 
         let hStr = minutesToTime(m);
-        let endStr = minutesToTime(m + myDuration);
+        let displayStr = formatAMPM(hStr);
         let div = document.createElement("div");
         
         if (!fits) {
             div.className = "slot off";
-            div.innerHTML = '<span class="slot-time">' + hStr + '</span><span class="slot-spots" style="font-size:10px;">Indisponível</span>';
+            div.innerHTML = '<span class="slot-time">' + displayStr + '</span><span class="slot-spots" style="font-size:11px;">🔴 Indisponível</span>';
         } else {
             div.className = "slot";
-            div.innerHTML = '<span class="slot-time">' + hStr + '</span><span class="slot-spots" style="font-size:10px;">Livre até ' + endStr + '</span>';
+            let spotText = maxAvailable === 1 ? "🟡 1 vaga disponível" : "🟢 2 vagas disponíveis";
+            div.innerHTML = '<span class="slot-time">' + displayStr + '</span><span class="slot-spots" style="font-size:11px;">' + spotText + '</span>';
             div.addEventListener("click", function() {
                 grid.querySelectorAll(".slot").forEach(s => s.classList.remove("on"));
                 div.classList.add("on");
-                selSlot = hStr;
+                selSlot = hStr; // Mantenemos el formato 24h internamente
                 selDuration = myDuration;
             });
         }
