@@ -103,83 +103,103 @@
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        /* ── Minimalist Modern Luxury ── */
+        /* ═══ LOGO ANIMATIONS ═══ */
+
+        /* Wrapper handles the reveal + aura */
         .logo-wrap {
             text-align: center;
             margin-bottom: 32px;
-            animation: logoReveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            position: relative;
+            animation: logoReveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .logo-inner { position: relative; display: inline-block; overflow: hidden; }
 
-        /* Crisp single-beam shimmer */
+        /* Aura ground glow – sits on the WRAP so no clipping occurs */
+        .logo-wrap::before {
+            content: '';
+            position: absolute;
+            bottom: 4px; left: 50%;
+            transform: translateX(-50%);
+            width: 55%; height: 28px;
+            background: radial-gradient(ellipse, rgba(14,165,233,0.45) 0%, transparent 68%);
+            filter: blur(10px);
+            animation: aura-breathe 5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Inner – NO overflow:hidden so no invisible box */
+        .logo-inner {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Crisp beam sweep using transform only – fades at edges naturally */
         .logo-inner::after {
             content: '';
             position: absolute;
-            top: -20%; left: -30%;
-            width: 30%; height: 140%;
-            background: linear-gradient(105deg, transparent, rgba(255,255,255,0.22), transparent);
-            transform: skewX(-15deg);
-            animation: crisp-beam 5s ease-in-out infinite;
+            top: -15%; left: 50%;
+            width: 18%; height: 130%;
+            background: linear-gradient(105deg,
+                transparent 0%,
+                rgba(255,255,255,0.22) 50%,
+                transparent 100%);
+            transform: skewX(-12deg) translateX(-400%);
+            animation: beam-glide 7s ease-in-out infinite;
             pointer-events: none;
             z-index: 4;
+            opacity: 0;
         }
 
-        /* Aura halo pulsing under the logo */
-        .logo-inner::before {
-            content: '';
-            position: absolute;
-            bottom: -12px; left: 50%;
-            transform: translateX(-50%);
-            width: 70%; height: 20px;
-            background: radial-gradient(ellipse, rgba(14,165,233,0.35) 0%, transparent 70%);
-            filter: blur(6px);
-            animation: aura-pulse 4s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 1;
-        }
-
+        /* Logo image */
         .logo {
             max-width: 280px; width: 100%;
             mix-blend-mode: screen;
-            animation: logo-float 5s ease-in-out infinite;
+            animation: logo-levitate 5s ease-in-out infinite;
             position: relative; z-index: 2;
-            will-change: transform;
+            will-change: transform, filter;
         }
 
-        /* Smooth minimal float */
-        @keyframes logo-float {
+        /* Smooth levitation with expanding blue halo */
+        @keyframes logo-levitate {
             0%, 100% {
                 transform: translateY(0px);
-                filter: drop-shadow(0 12px 20px rgba(14,165,233,0.12));
+                filter:
+                    drop-shadow(0 8px 18px rgba(14,165,233,0.14))
+                    drop-shadow(0 2px 6px rgba(0,0,0,0.4));
             }
             50% {
-                transform: translateY(-10px);
-                filter: drop-shadow(0 24px 32px rgba(14,165,233,0.28));
+                transform: translateY(-11px);
+                filter:
+                    drop-shadow(0 22px 34px rgba(14,165,233,0.32))
+                    drop-shadow(0 0 55px rgba(14,165,233,0.10))
+                    drop-shadow(0 2px 6px rgba(0,0,0,0.3));
             }
         }
 
-        /* Aura grows and fades in sync with float */
-        @keyframes aura-pulse {
-            0%, 100% { opacity: 0.5; transform: translateX(-50%) scaleX(0.8); }
-            50%       { opacity: 1;   transform: translateX(-50%) scaleX(1.2); }
+        /* Aura breathes in sync with levitate */
+        @keyframes aura-breathe {
+            0%, 100% { opacity: 0.45; transform: translateX(-50%) scaleX(0.75) scaleY(0.8); }
+            50%       { opacity: 1;    transform: translateX(-50%) scaleX(1.3)  scaleY(1.2); }
         }
 
-        /* Single crisp beam sweep */
-        @keyframes crisp-beam {
-            0%, 30%  { left: -30%; opacity: 0; }
-            45%      { opacity: 1; }
-            70%, 100%{ left: 120%; opacity: 0; }
+        /* Beam glides across using translate only – no left shift = no repaint */
+        @keyframes beam-glide {
+            0%, 20%  { opacity: 0; transform: skewX(-12deg) translateX(-500%); }
+            35%      { opacity: 1; }
+            65%      { opacity: 0.7; }
+            85%, 100%{ opacity: 0; transform: skewX(-12deg) translateX(700%); }
         }
 
-        /* Reveal on load */
+        /* Cinematic load: blur → sharp + rise */
         @keyframes logoReveal {
-            0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0%   { opacity: 0; transform: translateY(22px) scale(0.95); filter: blur(12px); }
+            60%  { filter: blur(1px); }
+            100% { opacity: 1; transform: translateY(0)   scale(1);    filter: blur(0px); }
         }
 
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         /* ── Typography & Header ── */
