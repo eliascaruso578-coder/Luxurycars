@@ -261,6 +261,20 @@
         .toggle-row.on .check-icon { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
         .toggle-row.on .check-icon svg { stroke: #000; }
 
+        /* ── Payment Options ── */
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+        .pay-option {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 16px; background: transparent; border: 1px solid var(--border);
+            border-radius: var(--radius-md); cursor: pointer; user-select: none;
+            transition: var(--transition-smooth);
+        }
+        .pay-option:hover { background: var(--surface-hover); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .pay-option:active { transform: scale(0.98); }
+        .pay-option.on { border-color: var(--accent); background: var(--surface-hover); }
+        .pay-icon { font-size: 20px; }
+        .pay-lbl { font-size: 14px; font-weight: 300; color: var(--text); }
+
         /* ── Date ── */
         .date-input {
             width: 100%;
@@ -569,6 +583,28 @@
             </div>
 
             <div class="field" style="margin-top: 32px;">
+                <label class="field-label">Forma de Pagamento</label>
+                <div class="payment-grid" id="paymentGrid">
+                    <div class="pay-option on" data-val="Pix">
+                        <span class="pay-icon">💠</span>
+                        <span class="pay-lbl">Pix</span>
+                    </div>
+                    <div class="pay-option" data-val="Dinheiro">
+                        <span class="pay-icon">💵</span>
+                        <span class="pay-lbl">Dinheiro</span>
+                    </div>
+                    <div class="pay-option" data-val="Cartão de Crédito">
+                        <span class="pay-icon">💳</span>
+                        <span class="pay-lbl">Crédito</span>
+                    </div>
+                    <div class="pay-option" data-val="Cartão de Débito">
+                        <span class="pay-icon">💳</span>
+                        <span class="pay-lbl">Débito</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field" style="margin-top: 32px;">
                 <label class="field-label">Horários</label>
                 <div class="slots" id="slotsGrid"></div>
             </div>
@@ -778,6 +814,14 @@ window.addEventListener("DOMContentLoaded", function() {
     var di = document.getElementById("fecha-agendamento");
     di.value = today;
     di.min = today;
+
+    /* Payment Option Logic */
+    document.querySelectorAll(".pay-option").forEach(function(opt) {
+        opt.addEventListener("click", function() {
+            document.querySelectorAll(".pay-option").forEach(o => o.classList.remove("on"));
+            opt.classList.add("on");
+        });
+    });
 
     renderSlots();
     calcularTotal();
@@ -1174,6 +1218,9 @@ async function enviarAgendamentoWhatsApp() {
     var car    = selCar ? selCar.n + " (" + TYPE[selCar.t].lbl + ")" : "Não especificado";
     var pkgEl  = document.getElementById("tipo-lavacao");
     var pkg    = pkgEl.options[pkgEl.selectedIndex].text;
+    
+    var payOpt = document.querySelector(".pay-option.on");
+    var paymentMethod = payOpt ? payOpt.dataset.val : "Pix";
 
     var extras = [];
     document.querySelectorAll(".toggle-row[data-on='1']").forEach(function(r) {
@@ -1197,6 +1244,7 @@ async function enviarAgendamentoWhatsApp() {
         car: car,
         package: pkg,
         extras: extras,
+        payment: paymentMethod,
         total: total,
         obs: cObs,
         status: "pending"
@@ -1245,6 +1293,7 @@ async function enviarAgendamentoWhatsApp() {
                 car: car,
                 package: pkg,
                 extras: extras,
+                payment: paymentMethod,
                 total: total,
                 obs: cObs,
                 status: "pending",
@@ -1267,7 +1316,8 @@ async function enviarAgendamentoWhatsApp() {
         "%F0%9F%9A%97 *Ve%C3%ADculo:* " + encodeURIComponent(car) + "%0A" +
         (cObs ? "%F0%9F%93%9D *Obs:* " + encodeURIComponent(cObs) + "%0A" : "") +
         "%F0%9F%A7%BC *Pacote:* " + encodeURIComponent(pkg) + "%0A" +
-        "%E2%9E%95 *Adicionais:* " + (extras.length ? encodeURIComponent(extras.join(", ")) : "Nenhum") + "%0A%0A" +
+        "%E2%9E%95 *Adicionais:* " + (extras.length ? encodeURIComponent(extras.join(", ")) : "Nenhum") + "%0A" +
+        "%F0%9F%92%B3 *Pagamento:* " + encodeURIComponent(paymentMethod) + "%0A%0A" +
         "%F0%9F%92%B0 *Total:* " + encodeURIComponent(total);
 
     window.open("https://wa.me/5549998099736?text=" + msg, "_blank");
