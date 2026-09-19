@@ -771,7 +771,10 @@ window.addEventListener("DOMContentLoaded", function() {
     });
 
     /* Date */
-    var today = new Date().toISOString().split("T")[0];
+    var tzDate = new Date();
+    var today = tzDate.getFullYear() + "-" + 
+                String(tzDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                String(tzDate.getDate()).padStart(2, '0');
     var di = document.getElementById("fecha-agendamento");
     di.value = today;
     di.min = today;
@@ -920,6 +923,11 @@ function finalizeCar(name, type) {
     document.getElementById("selCar").classList.add("show");
 
     calcularTotal();
+    
+    // Update the calendar slots in case they are already on the calendar step or if they go there next
+    if (document.getElementById("fecha-agendamento").value) {
+        renderSlots();
+    }
 }
 
 function closeDrop() {
@@ -994,7 +1002,7 @@ if (firebaseConfig.apiKey !== "SUA_API_KEY") {
 }
 
 /* ════════ TIME SLOTS ════════ */
-var MAX_VAGAS = 2;
+var MAX_VAGAS = 1; // Only 1 car can be serviced at a time
 var OPEN_MINUTES = 8 * 60;   // 08:00
 var CLOSE_MINUTES = 18 * 60; // 18:00
 var selDuration = 90;
@@ -1056,9 +1064,13 @@ async function renderSlots() {
         try {
             var snap = await db.collection("bookings")
                 .where("date", "==", date)
-                .where("status", "in", ["confirmed", "pending"])
                 .get();
-            snap.forEach(doc => existingBookings.push(doc.data()));
+            snap.forEach(doc => {
+                let d = doc.data();
+                if (d.status === "confirmed" || d.status === "pending") {
+                    existingBookings.push(d);
+                }
+            });
         } catch (e) {
             console.error("Firebase error, fallback to local:", e);
             let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
@@ -1079,10 +1091,26 @@ async function renderSlots() {
 
     let myDuration = getCarDuration(currentCar.t);
 
+    // Determine if the selected date is today to block past hours
+    let isToday = false;
+    let currentMins = 0;
+    let todayDate = new Date();
+    // Format today as YYYY-MM-DD in local time
+    let todayStr = todayDate.getFullYear() + "-" + 
+                   String(todayDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                   String(todayDate.getDate()).padStart(2, '0');
+    if (date === todayStr) {
+        isToday = true;
+        currentMins = todayDate.getHours() * 60 + todayDate.getMinutes();
+    }
+
     grid.innerHTML = "";
     generateAllSlots().forEach(m => {
         let fits = true;
-        if (m + myDuration > CLOSE_MINUTES) {
+        
+        if (isToday && m < currentMins) {
+            fits = false; // Block if the slot has already passed today
+        } else if (m + myDuration > CLOSE_MINUTES) {
             fits = false; // Would finish after closing time
         } else {
             for (let checkM = m; checkM < m + myDuration; checkM += 30) {
@@ -1179,16 +1207,17 @@ async function enviarAgendamentoWhatsApp() {
             // BULLET-PROOF SECURITY: Double check right before saving
             var checkSnap = await db.collection("bookings")
                 .where("date", "==", date)
-                .where("status", "in", ["confirmed", "pending"])
                 .get();
                 
             let tempUsage = {};
             checkSnap.forEach(doc => {
                 let b = doc.data();
-                let startMins = timeToMinutes(b.time);
-                let dur = b.duration || 90;
-                for (let m = startMins; m < startMins + dur; m += 30) {
-                    tempUsage[m] = (tempUsage[m] || 0) + 1;
+                if (b.status === "confirmed" || b.status === "pending") {
+                    let startMins = timeToMinutes(b.time);
+                    let dur = b.duration || 90;
+                    for (let m = startMins; m < startMins + dur; m += 30) {
+                        tempUsage[m] = (tempUsage[m] || 0) + 1;
+                    }
                 }
             });
             
