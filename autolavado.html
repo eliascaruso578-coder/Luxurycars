@@ -104,45 +104,77 @@
         }
 
         /* ── Minimalist Modern Luxury ── */
-        .logo-wrap { text-align:center; margin-bottom:32px; animation: fadeInDown 0.8s ease forwards; perspective: 1000px; }
-        .logo-inner { position: relative; display: inline-block; }
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: logoReveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .logo-inner { position: relative; display: inline-block; overflow: hidden; }
 
-        /* An elegant light sweep that passes over the logo softly */
+        /* Crisp single-beam shimmer */
         .logo-inner::after {
             content: '';
             position: absolute;
-            top: 0; left: -100%;
-            width: 50%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
-            transform: skewX(-25deg);
-            animation: slowShine 7s ease-in-out infinite;
+            top: -20%; left: -30%;
+            width: 30%; height: 140%;
+            background: linear-gradient(105deg, transparent, rgba(255,255,255,0.22), transparent);
+            transform: skewX(-15deg);
+            animation: crisp-beam 5s ease-in-out infinite;
             pointer-events: none;
             z-index: 4;
-            mix-blend-mode: overlay;
+        }
+
+        /* Aura halo pulsing under the logo */
+        .logo-inner::before {
+            content: '';
+            position: absolute;
+            bottom: -12px; left: 50%;
+            transform: translateX(-50%);
+            width: 70%; height: 20px;
+            background: radial-gradient(ellipse, rgba(14,165,233,0.35) 0%, transparent 70%);
+            filter: blur(6px);
+            animation: aura-pulse 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
         }
 
         .logo {
-            max-width:280px; width:100%; mix-blend-mode:screen;
-            animation: elegantFloat 8s ease-in-out infinite;
+            max-width: 280px; width: 100%;
+            mix-blend-mode: screen;
+            animation: logo-float 5s ease-in-out infinite;
             position: relative; z-index: 2;
-            transform-style: preserve-3d;
+            will-change: transform;
         }
 
-        @keyframes elegantFloat {
-            0%, 100% { 
-                transform: translateY(0) rotateX(5deg) rotateY(-5deg); 
-                filter: drop-shadow(0 15px 25px rgba(14,165,233,0.15));
+        /* Smooth minimal float */
+        @keyframes logo-float {
+            0%, 100% {
+                transform: translateY(0px);
+                filter: drop-shadow(0 12px 20px rgba(14,165,233,0.12));
             }
-            50% { 
-                transform: translateY(-12px) rotateX(-5deg) rotateY(5deg); 
-                filter: drop-shadow(0 30px 35px rgba(14,165,233,0.3));
+            50% {
+                transform: translateY(-10px);
+                filter: drop-shadow(0 24px 32px rgba(14,165,233,0.28));
             }
         }
 
-        @keyframes slowShine {
-            0%, 20% { left: -100%; opacity: 0; }
-            50% { opacity: 1; }
-            80%, 100% { left: 200%; opacity: 0; }
+        /* Aura grows and fades in sync with float */
+        @keyframes aura-pulse {
+            0%, 100% { opacity: 0.5; transform: translateX(-50%) scaleX(0.8); }
+            50%       { opacity: 1;   transform: translateX(-50%) scaleX(1.2); }
+        }
+
+        /* Single crisp beam sweep */
+        @keyframes crisp-beam {
+            0%, 30%  { left: -30%; opacity: 0; }
+            45%      { opacity: 1; }
+            70%, 100%{ left: 120%; opacity: 0; }
+        }
+
+        /* Reveal on load */
+        @keyframes logoReveal {
+            0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         @keyframes fadeInDown {
@@ -156,7 +188,6 @@
         .welcome h1 b { font-weight: 600; display: block; }
         .welcome p { font-size: 15px; color: var(--text-secondary); max-width: 90%; font-weight: 300; }
         
-        /* ── Minimal Card ── */
         .card {
             background: var(--surface);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -165,7 +196,10 @@
             margin-bottom: 24px;
             transition: var(--transition-smooth);
         }
-        .card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .card:hover { 
+            border-color: rgba(255,255,255,0.15); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+        }
         .card-title {
             font-size: 12px; font-weight: 600; color: var(--text-secondary);
             letter-spacing: 2px; text-transform: uppercase; margin-bottom: 32px;
@@ -679,13 +713,16 @@
             <svg id="icoWa" style="display:none" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"/></svg>
         </button>
     </div>
-    </div>
 
     <!-- ═══ DASHBOARD MODAL ═══ -->
     <div class="modal-overlay" id="dashboardOverlay" onclick="if(event.target===this) closeDashboard()">
         <div class="dashboard-modal" id="dashboardModal">
             <!-- JS Renders here -->
         </div>
+    </div>
+
+    <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: 40px; padding-bottom: 160px; opacity: 0.6; font-weight: 300;">
+        Desenvolvido por IX-XIX Systems 2026 · Todos os direitos reservados LuxuryCars
     </div>
 
 </div>

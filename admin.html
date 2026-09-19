@@ -462,6 +462,17 @@
         return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
     }
 
+    function formatAMPM(timeStr) {
+        if (!timeStr) return "";
+        let parts = timeStr.split(':');
+        let h = parseInt(parts[0]);
+        let m = parts[1];
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        h = h ? h : 12;
+        return (h < 10 ? "0" + h : h) + ":" + m + " " + ampm;
+    }
+
     function loadLocalHistoryMock() {
         let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
         let historyBks = details.filter(b => b.status === "completed" || b.status === "cancelled");
@@ -526,12 +537,14 @@
                 
                 let dur = b.duration || 90;
                 let endStr = minutesToTime(timeToMinutes(b.time) + dur);
+                let startAMPM = formatAMPM(b.time);
+                let endAMPM = formatAMPM(endStr);
 
                 const div = document.createElement("div");
                 div.className = "booking-card";
                 div.style.opacity = "0.8"; // Make historical items slightly faded
                 div.innerHTML = `
-                    <div class="b-time" style="font-size:14px; text-align:center;">${b.time}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endStr}</span></div>
+                    <div class="b-time" style="font-size:14px; text-align:center;">${startAMPM}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endAMPM}</span></div>
                     <div class="b-info">
                         <div class="b-car">${b.car} <span class="badge ${badge}" style="margin-left:8px;">${badgeTxt}</span></div>
                         <div class="b-details" style="color: var(--accent); margin-bottom: 2px;">👤 ${b.clientName || 'S/ Nome'} • 📱 ${b.clientPhone || 'S/ Contato'}</div>
@@ -656,11 +669,13 @@
 
             let dur = b.duration || 90;
             let endStr = minutesToTime(timeToMinutes(b.time) + dur);
+            let startAMPM = formatAMPM(b.time);
+            let endAMPM = formatAMPM(endStr);
 
             const div = document.createElement("div");
             div.className = "booking-card";
             div.innerHTML = `
-                <div class="b-time" style="font-size:14px; text-align:center;">${b.time}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endStr}</span></div>
+                <div class="b-time" style="font-size:14px; text-align:center;">${startAMPM}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endAMPM}</span></div>
                 <div class="b-info">
                     <div class="b-car">${b.car} <span class="badge ${badge}" style="margin-left:8px;">${badgeTxt}</span></div>
                     <div class="b-details" style="color: var(--accent); margin-bottom: 4px;">👤 ${b.clientName || 'S/ Nome'} • 📱 ${b.clientPhone || 'S/ Contato'}</div>
