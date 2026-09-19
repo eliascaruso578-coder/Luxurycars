@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Painel de Controle - Luxury Cars</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg: #030303;
+            --surface: #0a0a0a;
+            --surface-hover: #121212;
+            --border: #1a1a1a;
+            --accent: #0ea5e9;
+            --accent-bg: rgba(14, 165, 233, 0.1);
+            --text: #ffffff;
+            --text-secondary: #888888;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --transition-smooth: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 { font-weight: 300; font-size: 24px; }
+        
+        .date-picker-wrap {
+            display: flex; gap: 12px; align-items: center;
+        }
+        
+        input[type="date"] {
+            background: var(--surface); color: var(--text);
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 12px 16px; font-family: 'Outfit', sans-serif;
+            font-size: 16px; outline: none; color-scheme: dark;
+        }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 24px; text-align: center;
+        }
+        .stat-card .val { font-size: 32px; font-weight: 500; color: var(--accent); margin-bottom: 4px; }
+        .stat-card .lbl { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+
+        .booking-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .booking-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 20px;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+            transition: var(--transition-smooth);
+        }
+        .booking-card:hover { border-color: #333; }
+        
+        .b-time { font-size: 24px; font-weight: 600; color: var(--accent); width: 80px; }
+        .b-info { flex: 1; min-width: 200px; }
+        .b-car { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+        .b-details { font-size: 14px; color: var(--text-secondary); }
+        .b-price { font-size: 18px; font-weight: 400; color: #fff; }
+
+        .b-actions { display: flex; gap: 8px; }
+        .btn {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text); padding: 10px 16px; border-radius: 8px;
+            font-family: 'Outfit', sans-serif; cursor: pointer; transition: var(--transition-smooth);
+        }
+        .btn-success:hover { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); color: var(--danger); }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+        /* Status Badges */
+        .badge {
+            font-size: 12px; padding: 4px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;
+        }
+        .bg-confirmed { background: var(--accent-bg); color: var(--accent); }
+        .bg-completed { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .bg-cancelled { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        
+        .alert-box {
+            background: rgba(239, 165, 0, 0.1); border: 1px solid #f59e0b; color: #fcd34d;
+            padding: 16px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 14px;
+        }
+        
+        .tabs { display: flex; gap: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .tab { padding-bottom: 12px; cursor: pointer; color: var(--text-secondary); font-size: 18px; transition: var(--transition-smooth); }
+        .tab:hover { color: var(--text); }
+        .tab.active { border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 500; }
+        
+        .history-group-title { margin-top: 32px; margin-bottom: 12px; font-size: 20px; font-weight: 300; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+
+        /* ── Modern Toast ── */
+        .toast-container {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none; width: 90%; max-width: 400px;
+        }
+        .toast {
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text); padding: 14px 20px; border-radius: var(--radius-md);
+            font-family: 'Outfit', sans-serif; font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: toastIn 0.3s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        }
+        .toast svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: -1px; }
+        .toast-badge {
+            font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; margin-left: 8px; display: inline-block;
+        }
+        
+        .toast.success { border-color: var(--success); }
+        .toast.success svg { fill: var(--success); }
+        .toast.success .toast-badge { background: var(--success); color: #000; }
+        .toast.error { border-color: var(--danger); }
+        .toast.error svg { fill: var(--danger); }
+        .toast.error .toast-badge { background: var(--danger); color: #fff; }
+
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+        @keyframes toastShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        /* ── Confirm Modal ── */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .confirm-modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 32px 24px;
+            width: 90%; max-width: 400px; text-align: center;
+            transform: translateY(20px); transition: transform 0.3s;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .modal-overlay.show .confirm-modal { transform: translateY(0); }
+        .confirm-modal h3 { font-size: 22px; font-weight: 300; margin-bottom: 12px; }
+        .confirm-modal p { font-size: 15px; color: var(--text-secondary); margin-bottom: 24px; }
+        .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+        .confirm-actions button {
+            flex: 1; padding: 14px; border-radius: var(--radius-md); font-family: 'Outfit', sans-serif; font-size: 15px; cursor: pointer; border: none; font-weight: 500; transition: var(--transition-smooth);
+        }
+        .btn-modal-cancel { background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); }
+        .btn-modal-cancel:hover { background: rgba(255,255,255,0.1); }
+        .btn-modal-confirm { background: var(--accent); color: #000; }
+        .btn-modal-confirm:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        .btn-modal-danger { background: var(--danger); color: #fff; }
+        .btn-modal-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+
+    </style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN OVERLAY -->
+<div id="adminLoginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+    <div style="background:var(--surface); padding:40px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; max-width:400px; width:90%; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <h2 style="margin-bottom:10px; font-weight:400;">Acesso Restrito</h2>
+        <p style="color:var(--text-secondary); margin-bottom:24px; font-size:14px;">Insira a senha administrativa para acessar o painel de controle.</p>
+        <input type="password" id="adminPasswordInput" placeholder="Senha" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:var(--radius-md); font-family:'Outfit', sans-serif; margin-bottom:16px; outline:none; text-align:center; box-sizing:border-box;">
+        <button onclick="checkAdminPassword()" style="width:100%; padding:12px; background:var(--accent); color:#000; border:none; border-radius:var(--radius-md); font-family:'Outfit', sans-serif; font-size:15px; cursor:pointer; font-weight:500;">Entrar</button>
+        <div id="adminLoginError" style="color:var(--danger); margin-top:12px; font-size:13px; display:none;">Senha incorreta.</div>
+    </div>
+</div>
+
+<script>
+    function checkAdminPassword() {
+        var pwd = document.getElementById("adminPasswordInput").value;
+        if (pwd === "admin123") { // Simple password protection
+            document.getElementById("adminLoginOverlay").style.display = "none";
+            loadBookings(); // Reload just in case
+        } else {
+            document.getElementById("adminLoginError").style.display = "block";
+        }
+    }
+</script>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div style="max-width: 1000px; margin: 0 auto;">
+
+    <div class="header">
+        <h1>Painel de Controle</h1>
+        <div class="date-picker-wrap">
+            <span style="color: var(--text-secondary); font-size: 14px;">Filtrar por data:</span>
+            <input type="date" id="filter-date" onchange="loadBookings()">
+        </div>
+    </div>
+
+    <div id="fb-alert" class="alert-box" style="display:none;">
+        ⚠️ <b>Modo Local Ativo:</b> As credenciais do Firebase não foram configuradas no código. O sistema está lendo os dados salvos apenas no seu navegador atual. Para gerenciar agendamentos reais em nuvem, insira as chaves no script.
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" id="tab-dia" onclick="switchTab('dia')">Agendamentos do Dia</div>
+        <div class="tab" id="tab-hist" onclick="switchTab('hist')">Histórico Geral</div>
+    </div>
+
+    <div id="view-dia">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="stat-card">
+                <div class="val" id="stat-total">0</div>
+                <div class="lbl">Carros Aceitos/Agendados</div>
+            </div>
+            <div class="stat-card">
+                <div class="val" id="stat-revenue" style="color: var(--success);">R$ 0,00</div>
+                <div class="lbl">Faturamento Estimado</div>
+            </div>
+            <div class="stat-card">
+                <div class="val" id="stat-cancelled" style="color: var(--danger);">0</div>
+                <div class="lbl">Carros Cancelados</div>
+            </div>
+            <div class="stat-card">
+                <div class="val" id="stat-loss" style="color: var(--danger);">R$ 0,00</div>
+                <div class="lbl">Faturamento Perdido</div>
+            </div>
+        </div>
+
+        <div class="booking-list" id="bookings-container">
+            <!-- Rendered via JS -->
+        </div>
+    </div>
+    
+    <div id="view-hist" style="display: none;">
+        <div class="booking-list" id="history-container">
+            <!-- Rendered via JS -->
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══ CONFIRM MODAL ═══ -->
+<div class="modal-overlay" id="confirmOverlay" onclick="if(event.target===this) closeConfirmModal()">
+    <div class="confirm-modal">
+        <h3 id="confirmTitle">Confirmar Ação</h3>
+        <p id="confirmDesc">Tem certeza que deseja atualizar este agendamento?</p>
+        <div class="confirm-actions">
+            <button class="btn-modal-cancel" onclick="closeConfirmModal()">Voltar</button>
+            <button class="btn-modal-confirm" id="btnConfirmAction" onclick="executePendingStatus()">Sim, continuar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set today's date
+    const dateInput = document.getElementById('filter-date');
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+    dateInput.value = localISOTime;
+
+    /* ════════ DATABASE CONFIG ════════ */
+    var isFirebaseEnabled = false;
+
+    // 🛑 COLOQUE SUAS CREDENCIAIS DO FIREBASE AQUI
+    var firebaseConfig = {
+        apiKey: "AIzaSyB4RQMt23Ui1VIYiuJ0ybZv73KvngyJ4zU",
+        authDomain: "luxury-cars-a35ff.firebaseapp.com",
+        projectId: "luxury-cars-a35ff",
+        storageBucket: "luxury-cars-a35ff.firebasestorage.app",
+        messagingSenderId: "978062765158",
+        appId: "1:978062765158:web:e67f3af0d463d6ac4451a7",
+        measurementId: "G-YRD7XQQGNL"
+    };
+
+    if (firebaseConfig.apiKey !== "SUA_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+        isFirebaseEnabled = true;
+    } else {
+        document.getElementById("fb-alert").style.display = "block";
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        
+        if (tabId === 'dia') {
+            document.getElementById('view-dia').style.display = 'block';
+            document.getElementById('view-hist').style.display = 'none';
+            document.querySelector('.date-picker-wrap').style.display = 'flex';
+            loadBookings();
+        } else {
+            document.getElementById('view-dia').style.display = 'none';
+            document.getElementById('view-hist').style.display = 'block';
+            document.querySelector('.date-picker-wrap').style.display = 'none';
+            loadHistory();
+        }
+    }
+
+    async function loadHistory() {
+        const container = document.getElementById("history-container");
+        container.innerHTML = "<div class='empty-state'>Carregando histórico...</div>";
+
+        let bookings = [];
+
+        if (isFirebaseEnabled) {
+            try {
+                const snap = await db.collection("bookings")
+                    .where("status", "in", ["completed", "cancelled"])
+                    .get();
+                snap.forEach(doc => bookings.push({ id: doc.id, ...doc.data() }));
+                // Ordenar en JS
+                bookings.sort((a,b) => {
+                    if (a.date === b.date) return b.time.localeCompare(a.time);
+                    return b.date.localeCompare(a.date);
+                });
+            } catch (e) {
+                console.error("Firebase error", e);
+                bookings = loadLocalHistoryMock();
+            }
+        } else {
+            bookings = loadLocalHistoryMock();
+        }
+
+        renderHistory(bookings);
+    }
+
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        let p = timeStr.split(':');
+        return parseInt(p[0]) * 60 + parseInt(p[1]);
+    }
+
+    function minutesToTime(mins) {
+        let h = Math.floor(mins / 60);
+        let m = mins % 60;
+        return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+    }
+
+    function loadLocalHistoryMock() {
+        let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
+        let historyBks = details.filter(b => b.status === "completed" || b.status === "cancelled");
+        // Sort descending
+        return historyBks.sort((a,b) => {
+            if (a.date === b.date) return b.time.localeCompare(a.time);
+            return b.date.localeCompare(a.date);
+        });
+    }
+
+    function renderHistory(bookings) {
+        const container = document.getElementById("history-container");
+        container.innerHTML = "";
+        
+        if (bookings.length === 0) {
+            container.innerHTML = "<div class='empty-state'>Nenhum agendamento concluído no histórico.</div>";
+            return;
+        }
+
+        let grouped = {};
+        bookings.forEach(b => {
+            if (!grouped[b.date]) grouped[b.date] = [];
+            grouped[b.date].push(b);
+        });
+
+        for (let date in grouped) {
+            let dFmt = date.split("-").reverse().join("/");
+            
+            let diaRev = 0;
+            let diaRevLost = 0;
+            let diaCount = 0;
+            let diaCanc = 0;
+            
+            grouped[date].forEach(b => {
+                let val = parseFloat((b.total || "0").replace(/[^\d,-]/g, '').replace(',', '.'));
+                val = isNaN(val) ? 0 : val;
+                if (b.status === "cancelled") {
+                    diaCanc++;
+                    diaRevLost += val;
+                } else {
+                    diaCount++;
+                    diaRev += val;
+                }
+            });
+
+            let title = document.createElement("div");
+            title.className = "history-group-title";
+            title.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:8px;">
+                    <div>Data: <b>${dFmt}</b></div>
+                    <div style="font-size:14px; font-weight:400; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:12px;">
+                        <span style="color:var(--success); margin-right:16px;" title="Faturamento do Dia">✅ R$ ${diaRev.toFixed(2).replace(".",",")} (${diaCount})</span>
+                        <span style="color:var(--danger);" title="Perdido em Cancelamentos">❌ R$ ${diaRevLost.toFixed(2).replace(".",",")} (${diaCanc})</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(title);
+            
+            grouped[date].forEach(b => {
+                let badge = "bg-completed"; let badgeTxt = "FINALIZADO";
+                if (b.status === "cancelled") { badge = "bg-cancelled"; badgeTxt = "CANCELADO"; }
+                
+                let dur = b.duration || 90;
+                let endStr = minutesToTime(timeToMinutes(b.time) + dur);
+
+                const div = document.createElement("div");
+                div.className = "booking-card";
+                div.style.opacity = "0.8"; // Make historical items slightly faded
+                div.innerHTML = `
+                    <div class="b-time" style="font-size:14px; text-align:center;">${b.time}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endStr}</span></div>
+                    <div class="b-info">
+                        <div class="b-car">${b.car} <span class="badge ${badge}" style="margin-left:8px;">${badgeTxt}</span></div>
+                        <div class="b-details" style="color: var(--accent); margin-bottom: 2px;">👤 ${b.clientName || 'S/ Nome'} • 📱 ${b.clientPhone || 'S/ Contato'}</div>
+                        <div class="b-details">${b.package} • ${b.extras && b.extras.length ? b.extras.join(", ") : "S/ Adicionais"}</div>
+                        ${b.obs ? `<div class="b-details" style="margin-top:4px; font-style:italic; color:#aaa;">📝 Obs: ${b.obs}</div>` : ''}
+                    </div>
+                    <div class="b-price" style="${b.status === 'cancelled' ? 'color: var(--danger); text-decoration: line-through;' : 'color: var(--success);'}">${b.total}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    }
+
+    async function loadBookings() {
+        const date = dateInput.value;
+        if (!date) return;
+
+        const container = document.getElementById("bookings-container");
+        container.innerHTML = "<div class='empty-state'>Carregando dados...</div>";
+
+        let bookings = [];
+
+        if (isFirebaseEnabled) {
+            try {
+                const snap = await db.collection("bookings")
+                    .where("date", "==", date)
+                    .orderBy("time", "asc")
+                    .get();
+                snap.forEach(doc => {
+                    bookings.push({ id: doc.id, ...doc.data() });
+                });
+            } catch (e) {
+                console.error("Firebase error", e);
+                bookings = loadLocalBookingsMock(date);
+            }
+        } else {
+            bookings = loadLocalBookingsMock(date);
+        }
+
+        renderBookings(bookings);
+    }
+
+    // Mock data reader for localStorage fallback
+    function loadLocalBookingsMock(date) {
+        let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
+        let arr = details.filter(b => b.date === date);
+        
+        // Fallback para agendamentos antigos salvos apenas como contagem (sem dados completos)
+        let b = JSON.parse(localStorage.getItem("lux_bookings") || "{}");
+        let dayData = b[date] || {};
+        
+        // Verifica se a quantidade bate, senao injeta mocks pros faltantes
+        let realCounts = {};
+        arr.forEach(a => {
+            if (a.status !== "cancelled") realCounts[a.time] = (realCounts[a.time] || 0) + 1;
+        });
+        
+        for (let time in dayData) {
+            let faltantes = dayData[time] - (realCounts[time] || 0);
+            for (let i = 0; i < faltantes; i++) {
+                arr.push({
+                    id: "old_local_" + time + "_" + i,
+                    date: date,
+                    time: time,
+                    car: "Veículo Antigo (Sem Dados)",
+                    package: "Lavagem",
+                    total: "R$ 70,00",
+                    status: "confirmed",
+                    clientName: "Cliente Desconhecido",
+                    clientPhone: ""
+                });
+            }
+        }
+        
+        return arr.sort((a,b) => a.time.localeCompare(b.time));
+    }
+
+    function renderBookings(bookings) {
+        const container = document.getElementById("bookings-container");
+        let countAcc = 0; let revAcc = 0;
+        let countCanc = 0; let revCanc = 0;
+
+        container.innerHTML = "";
+
+        if (bookings.length === 0) {
+            container.innerHTML = "<div class='empty-state'>Nenhum agendamento para esta data.</div>";
+            updateStats(0, 0, 0, 0);
+            return;
+        }
+
+        bookings.forEach(b => {
+            // Extract number from price string (e.g. "R$ 70,00" -> 70.00)
+            let val = parseFloat((b.total || "0").replace(/[^\d,-]/g, '').replace(',', '.'));
+            val = isNaN(val) ? 0 : val;
+            
+            if (b.status !== "cancelled") {
+                countAcc++;
+                revAcc += val;
+            } else {
+                countCanc++;
+                revCanc += val;
+            }
+
+            let badge = "bg-confirmed"; let badgeTxt = "Agendado";
+            if (b.status === "pending") { badge = "bg-cancelled"; badgeTxt = "Pendente"; } // Pending looks red-ish/warning to grab attention
+            if (b.status === "completed") { badge = "bg-completed"; badgeTxt = "Finalizado"; }
+            if (b.status === "cancelled") { badge = "bg-cancelled"; badgeTxt = "Cancelado"; }
+
+            let acts = "";
+            let phoneStr = b.clientPhone ? b.clientPhone.replace(/\D/g, '') : '';
+            if (b.status === "pending") {
+                acts = `
+                    <button class="btn" style="background:var(--accent); color:#000;" onclick="openConfirmModal('${b.id}', 'confirmed', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Aceitar</button>
+                    <button class="btn btn-danger" onclick="openConfirmModal('${b.id}', 'cancelled', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Recusar</button>
+                `;
+            } else if (b.status === "confirmed") {
+                acts = `
+                    <button class="btn btn-success" onclick="openConfirmModal('${b.id}', 'completed', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Concluir</button>
+                    <button class="btn btn-danger" onclick="openConfirmModal('${b.id}', 'cancelled', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Cancelar</button>
+                `;
+            }
+
+            let dur = b.duration || 90;
+            let endStr = minutesToTime(timeToMinutes(b.time) + dur);
+
+            const div = document.createElement("div");
+            div.className = "booking-card";
+            div.innerHTML = `
+                <div class="b-time" style="font-size:14px; text-align:center;">${b.time}<br><span style="font-size:11px; color:var(--text-secondary);">-<br>${endStr}</span></div>
+                <div class="b-info">
+                    <div class="b-car">${b.car} <span class="badge ${badge}" style="margin-left:8px;">${badgeTxt}</span></div>
+                    <div class="b-details" style="color: var(--accent); margin-bottom: 4px;">👤 ${b.clientName || 'S/ Nome'} • 📱 ${b.clientPhone || 'S/ Contato'}</div>
+                    <div class="b-details">${b.package} • ${b.extras && b.extras.length ? b.extras.join(", ") : "S/ Adicionais"}</div>
+                    ${b.obs ? `<div class="b-details" style="margin-top:4px; font-style:italic; color:#aaa;">📝 Obs: ${b.obs}</div>` : ''}
+                </div>
+                <div class="b-price">${b.total}</div>
+                <div class="b-actions">${acts}</div>
+            `;
+            container.appendChild(div);
+        });
+
+        updateStats(countAcc, revAcc, countCanc, revCanc);
+    }
+
+    function updateStats(countAcc, revAcc, countCanc, revCanc) {
+        document.getElementById("stat-total").textContent = countAcc;
+        document.getElementById("stat-revenue").textContent = "R$ " + revAcc.toFixed(2).replace(".", ",");
+        document.getElementById("stat-cancelled").textContent = countCanc;
+        document.getElementById("stat-loss").textContent = "R$ " + revCanc.toFixed(2).replace(".", ",");
+    }
+
+    async function updateStatus(id, newStatus, phone, name, date, time) {
+        if (isFirebaseEnabled) {
+            try {
+                await db.collection("bookings").doc(id).update({ status: newStatus });
+            } catch (e) {
+                showToast("Erro ao atualizar: " + e.message, "error");
+                return;
+            }
+        } else {
+            // Update the detailed local fallback store
+            let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
+            let idx = details.findIndex(b => b.id === id);
+            let timeToFree = time;
+            if (idx >= 0) {
+                details[idx].status = newStatus;
+                localStorage.setItem("lux_bookings_details", JSON.stringify(details));
+                timeToFree = details[idx].time;
+            }
+
+            // Free the slot count physically if cancelled or completed
+            if (newStatus === "cancelled" || newStatus === "completed") {
+                let d = dateInput.value;
+                let b = JSON.parse(localStorage.getItem("lux_bookings") || "{}");
+                if (b[d] && b[d][timeToFree]) {
+                    b[d][timeToFree]--;
+                    if (b[d][timeToFree] <= 0) delete b[d][timeToFree];
+                    localStorage.setItem("lux_bookings", JSON.stringify(b));
+                }
+            }
+        }
+        loadBookings();
+        
+        let labelStatus = newStatus === 'completed' ? 'finalizado' : (newStatus === 'confirmed' ? 'aceito' : 'cancelado');
+        showToast("Agendamento " + labelStatus + " com sucesso!", "success");
+
+        if (phone && phone.length >= 10 && name !== 'undefined') {
+            let dFmt = date.split("-").reverse().join("/");
+            let msg = "";
+            if (newStatus === "completed") {
+                msg = `Olá ${name}! Passando para avisar que seu carro já está limpo, cheiroso e pronto para ser retirado na Luxury Cars! Agradecemos a preferência e te esperamos.`;
+            } else if (newStatus === "cancelled") {
+                msg = `Olá ${name}. Infelizmente tivemos que cancelar/recusar seu agendamento na Luxury Cars do dia ${dFmt} às ${time}. Por favor, entre em contato para remarcarmos ou para mais detalhes.`;
+            } else if (newStatus === "confirmed") {
+                msg = `Olá ${name}! Seu agendamento na Luxury Cars para o dia ${dFmt} às ${time} foi CONFIRMADO com sucesso. Te aguardamos!`;
+            }
+            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+        }
+    }
+
+    function showToast(msg, type = "success") {
+        var c = document.getElementById("toastContainer");
+        var existing = Array.from(c.children).find(el => el.dataset.msg === msg);
+        if (existing) {
+            var count = parseInt(existing.dataset.count || "1") + 1;
+            existing.dataset.count = count;
+            var badge = existing.querySelector(".toast-badge");
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "toast-badge";
+                existing.querySelector(".toast-msg").appendChild(badge);
+            }
+            badge.textContent = "x" + count;
+            existing.style.animation = "none";
+            void existing.offsetWidth; // trigger reflow
+            existing.style.animation = "toastShake 0.4s ease";
+            clearTimeout(existing.timeoutId);
+            existing.timeoutId = setTimeout(function() {
+                existing.style.animation = "toastOut 0.3s forwards";
+                setTimeout(function() { existing.remove(); }, 300);
+            }, 4000);
+            return;
+        }
+        
+        var t = document.createElement("div");
+        t.className = "toast " + type;
+        t.dataset.msg = msg;
+        t.dataset.count = 1;
+        var iconSvg = type === "success" 
+            ? '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+            
+        t.innerHTML = iconSvg + '<span class="toast-msg">' + msg + '</span>';
+        c.appendChild(t);
+        t.timeoutId = setTimeout(function() {
+            t.style.animation = "toastOut 0.3s forwards";
+            setTimeout(function() { t.remove(); }, 300);
+        }, 4000);
+    }
+    
+    /* Modal Logic */
+    let pendingStatusArgs = null;
+    function openConfirmModal(id, newStatus, phone, name, date, time) {
+        pendingStatusArgs = arguments;
+        const title = document.getElementById("confirmTitle");
+        const desc = document.getElementById("confirmDesc");
+        const btn = document.getElementById("btnConfirmAction");
+        
+        if (newStatus === "completed") {
+            title.textContent = "Finalizar Agendamento";
+            desc.innerHTML = "O carro de <b>" + (name || 'Cliente') + "</b> já está limpo e pronto? Isso enviará uma mensagem avisando o cliente.";
+            btn.className = "btn-modal-confirm";
+            btn.textContent = "Sim, Carro Pronto";
+        } else if (newStatus === "confirmed") {
+            title.textContent = "Aceitar Agendamento";
+            desc.innerHTML = "Deseja aceitar o agendamento de <b>" + (name || 'Cliente') + "</b>? Isso confirmará o horário para o cliente.";
+            btn.className = "btn-modal-confirm";
+            btn.textContent = "Sim, Aceitar";
+        } else {
+            title.textContent = "Cancelar Agendamento";
+            desc.innerHTML = "Tem certeza que deseja cancelar/recusar o agendamento de <b>" + (name || 'Cliente') + "</b>? O horário ficará livre novamente.";
+            btn.className = "btn-modal-danger";
+            btn.textContent = "Sim, Cancelar";
+        }
+        
+        document.getElementById("confirmOverlay").classList.add("show");
+    }
+    
+    function closeConfirmModal() {
+        document.getElementById("confirmOverlay").classList.remove("show");
+        pendingStatusArgs = null;
+    }
+    
+    function executePendingStatus() {
+        if (!pendingStatusArgs) return;
+        updateStatus.apply(this, pendingStatusArgs);
+        closeConfirmModal();
+    }
+
+    // Initial load
+    loadBookings();
+
+</script>
+</body>
+</html>
