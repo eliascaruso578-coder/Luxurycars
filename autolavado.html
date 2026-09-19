@@ -1056,17 +1056,17 @@ async function renderSlots() {
         try {
             var snap = await db.collection("bookings")
                 .where("date", "==", date)
-                .where("status", "==", "confirmed")
+                .where("status", "in", ["confirmed", "pending"])
                 .get();
             snap.forEach(doc => existingBookings.push(doc.data()));
         } catch (e) {
             console.error("Firebase error, fallback to local:", e);
             let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
-            existingBookings = details.filter(b => b.date === date && b.status === "confirmed");
+            existingBookings = details.filter(b => b.date === date && (b.status === "confirmed" || b.status === "pending"));
         }
     } else {
         let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
-        existingBookings = details.filter(b => b.date === date && b.status === "confirmed");
+        existingBookings = details.filter(b => b.date === date && (b.status === "confirmed" || b.status === "pending"));
     }
 
     existingBookings.forEach(b => {
@@ -1176,6 +1176,36 @@ async function enviarAgendamentoWhatsApp() {
 
     if (isFirebaseEnabled) {
         try {
+            // BULLET-PROOF SECURITY: Double check right before saving
+            var checkSnap = await db.collection("bookings")
+                .where("date", "==", date)
+                .where("status", "in", ["confirmed", "pending"])
+                .get();
+                
+            let tempUsage = {};
+            checkSnap.forEach(doc => {
+                let b = doc.data();
+                let startMins = timeToMinutes(b.time);
+                let dur = b.duration || 90;
+                for (let m = startMins; m < startMins + dur; m += 30) {
+                    tempUsage[m] = (tempUsage[m] || 0) + 1;
+                }
+            });
+            
+            let reqStart = timeToMinutes(selSlot);
+            let fits = true;
+            for(let m = reqStart; m < reqStart + selDuration; m += 30) {
+                if((tempUsage[m] || 0) >= MAX_VAGAS) {
+                    fits = false; break;
+                }
+            }
+            
+            if(!fits) {
+                showToast("¡Lo sentimos! Alguien más acaba de reservar este horario hace unos segundos. Por favor, elige otro.");
+                renderSlots(); // Reload calendar
+                return; // Stop saving
+            }
+
             await db.collection("bookings").add({
                 userId: currentUser ? currentUser.uid : "anon",
                 clientName: cName,
