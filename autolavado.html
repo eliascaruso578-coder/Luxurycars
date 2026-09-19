@@ -1198,23 +1198,58 @@ async function renderSlots() {
 /* ════════ PRICE ════════ */
 var descontoAtivo = 0;
 
-function aplicarCupom() {
+async function aplicarCupom() {
     var cod = document.getElementById("cupom-codigo").value.trim().toUpperCase();
     var msgEl = document.getElementById("cupom-msg");
+    var btn = document.querySelector("#cupom-codigo").nextElementSibling;
+
+    if (cod === "") {
+        descontoAtivo = 0;
+        msgEl.style.display = "none";
+        calcularTotal();
+        return;
+    }
+
+    btn.textContent = "...";
+    btn.disabled = true;
+
     if (cod === "LUXURY8") {
         descontoAtivo = 0.08;
         msgEl.textContent = "✅ Cupom de 8% aplicado com sucesso!";
         msgEl.style.color = "var(--accent)";
         msgEl.style.display = "block";
-    } else if (cod === "") {
-        descontoAtivo = 0;
-        msgEl.style.display = "none";
     } else {
-        descontoAtivo = 0;
-        msgEl.textContent = "❌ Cupom inválido.";
-        msgEl.style.color = "var(--danger)";
-        msgEl.style.display = "block";
+        if (isFirebaseEnabled) {
+            try {
+                let doc = await db.collection("coupons").doc(cod).get();
+                if (doc.exists) {
+                    let d = doc.data().discount;
+                    descontoAtivo = d / 100;
+                    msgEl.textContent = "✅ Cupom de " + d + "% aplicado com sucesso!";
+                    msgEl.style.color = "var(--accent)";
+                    msgEl.style.display = "block";
+                } else {
+                    descontoAtivo = 0;
+                    msgEl.textContent = "❌ Cupom inválido ou expirado.";
+                    msgEl.style.color = "var(--danger)";
+                    msgEl.style.display = "block";
+                }
+            } catch(e) {
+                descontoAtivo = 0;
+                msgEl.textContent = "❌ Erro ao validar cupom.";
+                msgEl.style.color = "var(--danger)";
+                msgEl.style.display = "block";
+            }
+        } else {
+            descontoAtivo = 0;
+            msgEl.textContent = "❌ Sistema offline.";
+            msgEl.style.color = "var(--danger)";
+            msgEl.style.display = "block";
+        }
     }
+    
+    btn.textContent = "Aplicar";
+    btn.disabled = false;
     calcularTotal();
 }
 

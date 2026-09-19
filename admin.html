@@ -223,6 +223,7 @@
     <div class="tabs">
         <div class="tab active" id="tab-dia" onclick="switchTab('dia')">Agendamentos do Dia</div>
         <div class="tab" id="tab-hist" onclick="switchTab('hist')">Histórico Geral</div>
+        <div class="tab" id="tab-cupons" onclick="switchTab('cupons')">Gestão de Cupons</div>
     </div>
 
     <div id="view-dia">
@@ -252,6 +253,27 @@
     
     <div id="view-hist" style="display: none;">
         <div class="booking-list" id="history-container">
+            <!-- Rendered via JS -->
+        </div>
+    </div>
+
+    <div id="view-cupons" style="display: none;">
+        <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+            <h3 style="margin-top:0; margin-bottom: 16px; font-weight:400;">Criar Novo Cupom</h3>
+            <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Código do Cupom (Ex: VIP20)</label>
+                    <input type="text" id="new-cupom-code" placeholder="CÓDIGO" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); text-transform:uppercase; box-sizing:border-box;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Desconto (%)</label>
+                    <input type="number" id="new-cupom-discount" placeholder="Ex: 15" min="1" max="100" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); box-sizing:border-box;">
+                </div>
+                <button onclick="createCoupon()" style="padding: 12px 24px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">Salvar Cupom</button>
+            </div>
+        </div>
+
+        <div class="booking-list" id="coupons-container">
             <!-- Rendered via JS -->
         </div>
     </div>
@@ -306,13 +328,21 @@
         if (tabId === 'dia') {
             document.getElementById('view-dia').style.display = 'block';
             document.getElementById('view-hist').style.display = 'none';
+            document.getElementById('view-cupons').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'flex';
             loadBookings();
-        } else {
+        } else if (tabId === 'hist') {
             document.getElementById('view-dia').style.display = 'none';
             document.getElementById('view-hist').style.display = 'block';
+            document.getElementById('view-cupons').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'none';
             loadHistory();
+        } else if (tabId === 'cupons') {
+            document.getElementById('view-dia').style.display = 'none';
+            document.getElementById('view-hist').style.display = 'none';
+            document.getElementById('view-cupons').style.display = 'block';
+            document.querySelector('.date-picker-wrap').style.display = 'none';
+            loadCoupons();
         }
     }
 
@@ -342,6 +372,82 @@
         }
 
         renderHistory(bookings);
+    }
+
+    async function loadCoupons() {
+        const container = document.getElementById("coupons-container");
+        container.innerHTML = "<div class='empty-state'>Carregando cupons...</div>";
+
+        if (!isFirebaseEnabled) {
+            container.innerHTML = "<div class='empty-state'>Firebase não configurado.</div>";
+            return;
+        }
+
+        try {
+            const snap = await db.collection("coupons").get();
+            if (snap.empty) {
+                container.innerHTML = "<div class='empty-state'>Nenhum cupom criado ainda.</div>";
+                return;
+            }
+
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                let data = doc.data();
+                let html = `
+                    <div class="booking-card" style="border-left: 4px solid var(--accent);">
+                        <div class="bk-header">
+                            <div class="bk-name">${doc.id}</div>
+                            <div class="bk-badge bg-confirmed" style="background:var(--accent); color:#000;">${data.discount}% OFF</div>
+                        </div>
+                        <div style="margin-top:16px;">
+                            <button onclick="deleteCoupon('${doc.id}')" style="background:transparent; border:1px solid var(--danger); color:var(--danger); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;">Deletar Cupom</button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        } catch (e) {
+            console.error("Firebase error loading coupons", e);
+            container.innerHTML = "<div class='empty-state'>Erro ao carregar cupons.</div>";
+        }
+    }
+
+    async function createCoupon() {
+        let code = document.getElementById("new-cupom-code").value.trim().toUpperCase();
+        let discount = parseInt(document.getElementById("new-cupom-discount").value);
+
+        if (!code) { showToast("error", "Digite o código do cupom"); return; }
+        if (!discount || discount < 1 || discount > 100) { showToast("error", "Desconto inválido (1-100)"); return; }
+
+        if (isFirebaseEnabled) {
+            try {
+                await db.collection("coupons").doc(code).set({
+                    discount: discount,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast("success", "Cupom criado!");
+                document.getElementById("new-cupom-code").value = "";
+                document.getElementById("new-cupom-discount").value = "";
+                loadCoupons();
+            } catch (e) {
+                console.error("Error creating coupon", e);
+                showToast("error", "Erro ao criar cupom");
+            }
+        }
+    }
+
+    async function deleteCoupon(code) {
+        if (!confirm("Tem certeza que deseja deletar o cupom " + code + "?")) return;
+        if (isFirebaseEnabled) {
+            try {
+                await db.collection("coupons").doc(code).delete();
+                showToast("success", "Cupom deletado!");
+                loadCoupons();
+            } catch (e) {
+                console.error("Error deleting coupon", e);
+                showToast("error", "Erro ao deletar cupom");
+            }
+        }
     }
 
     function timeToMinutes(timeStr) {
