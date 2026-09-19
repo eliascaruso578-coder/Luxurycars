@@ -103,103 +103,140 @@
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        /* ═══ LOGO ANIMATIONS ═══ */
+        /* ═══ LOGO — GPU-only, zero lag ═══
+           Rule: ONLY transform + opacity in @keyframes.
+           filter/shadow is set STATIC (composited once, not per-frame).
+        ══════════════════════════════════════ */
 
-        /* Wrapper handles the reveal + aura */
         .logo-wrap {
             text-align: center;
             margin-bottom: 32px;
             position: relative;
-            animation: logoReveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: logoReveal 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+            will-change: transform, opacity;
         }
 
-        /* Aura ground glow – sits on the WRAP so no clipping occurs */
+        /* Aura — GPU layer, no filter animation */
         .logo-wrap::before {
             content: '';
             position: absolute;
-            bottom: 4px; left: 50%;
-            transform: translateX(-50%);
-            width: 55%; height: 28px;
-            background: radial-gradient(ellipse, rgba(14,165,233,0.45) 0%, transparent 68%);
-            filter: blur(10px);
+            bottom: -4px; left: 50%;
+            width: 60%; height: 26px;
+            background: radial-gradient(ellipse at center,
+                rgba(14,165,233,0.55) 0%, transparent 72%);
+            filter: blur(9px); /* static — composited once */
+            transform: translate3d(-50%, 0, 0);
             animation: aura-breathe 5s ease-in-out infinite;
+            will-change: transform, opacity;
             pointer-events: none;
-            z-index: 0;
         }
 
-        /* Inner – NO overflow:hidden so no invisible box */
         .logo-inner {
             position: relative;
             display: inline-block;
         }
 
-        /* Crisp beam sweep using transform only – fades at edges naturally */
+        /* Beam — only transform + opacity, skewX static */
         .logo-inner::after {
             content: '';
             position: absolute;
-            top: -15%; left: 50%;
-            width: 18%; height: 130%;
+            top: -20%; left: 50%;
+            width: 14%; height: 140%;
             background: linear-gradient(105deg,
                 transparent 0%,
-                rgba(255,255,255,0.22) 50%,
+                rgba(255,255,255,0.28) 50%,
                 transparent 100%);
-            transform: skewX(-12deg) translateX(-400%);
+            transform: skewX(-10deg) translate3d(-600%, 0, 0);
             animation: beam-glide 7s ease-in-out infinite;
+            will-change: transform, opacity;
             pointer-events: none;
             z-index: 4;
             opacity: 0;
         }
 
-        /* Logo image */
         .logo {
             max-width: 280px; width: 100%;
             mix-blend-mode: screen;
+            /* Static shadow = zero repaint cost */
+            filter: drop-shadow(0 14px 28px rgba(14,165,233,0.22))
+                    drop-shadow(0 3px 8px rgba(0,0,0,0.5));
             animation: logo-levitate 5s ease-in-out infinite;
             position: relative; z-index: 2;
-            will-change: transform, filter;
+            will-change: transform;
+            transform: translate3d(0, 0, 0); /* GPU layer */
         }
 
-        /* Smooth levitation with expanding blue halo */
+        /* ── Keyframes: ONLY transform + opacity ── */
+
         @keyframes logo-levitate {
+            0%, 100% { transform: translate3d(0,  0px, 0); opacity: 1; }
+            50%       { transform: translate3d(0, -12px, 0); opacity: 1; }
+        }
+
+        @keyframes aura-breathe {
             0%, 100% {
-                transform: translateY(0px);
-                filter:
-                    drop-shadow(0 8px 18px rgba(14,165,233,0.14))
-                    drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+                opacity: 0.35;
+                transform: translate3d(-50%, 0, 0) scaleX(0.65);
             }
             50% {
-                transform: translateY(-11px);
-                filter:
-                    drop-shadow(0 22px 34px rgba(14,165,233,0.32))
-                    drop-shadow(0 0 55px rgba(14,165,233,0.10))
-                    drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+                opacity: 1;
+                transform: translate3d(-50%, 0, 0) scaleX(1.4);
             }
         }
 
-        /* Aura breathes in sync with levitate */
-        @keyframes aura-breathe {
-            0%, 100% { opacity: 0.45; transform: translateX(-50%) scaleX(0.75) scaleY(0.8); }
-            50%       { opacity: 1;    transform: translateX(-50%) scaleX(1.3)  scaleY(1.2); }
-        }
-
-        /* Beam glides across using translate only – no left shift = no repaint */
         @keyframes beam-glide {
-            0%, 20%  { opacity: 0; transform: skewX(-12deg) translateX(-500%); }
-            35%      { opacity: 1; }
-            65%      { opacity: 0.7; }
-            85%, 100%{ opacity: 0; transform: skewX(-12deg) translateX(700%); }
+            0%, 18%  { opacity: 0; transform: skewX(-10deg) translate3d(-600%, 0, 0); }
+            32%      { opacity: 1; }
+            68%      { opacity: 0.6; }
+            85%, 100%{ opacity: 0; transform: skewX(-10deg) translate3d(700%, 0, 0); }
         }
 
-        /* Cinematic load: blur → sharp + rise */
         @keyframes logoReveal {
-            0%   { opacity: 0; transform: translateY(22px) scale(0.95); filter: blur(12px); }
-            60%  { filter: blur(1px); }
-            100% { opacity: 1; transform: translateY(0)   scale(1);    filter: blur(0px); }
+            0%   { opacity: 0; transform: translate3d(0, 28px, 0) scale(0.93); }
+            100% { opacity: 1; transform: translate3d(0, 0,   0) scale(1);    }
+        }
+
+        /* ── Bubble foam effect — car wash theme ── */
+        .logo-bubbles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .logo-bubbles span {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(14, 165, 233, 0.55);
+            background: radial-gradient(circle at 30% 30%,
+                rgba(255,255,255,0.25), rgba(14,165,233,0.06));
+            bottom: 15%;
+            opacity: 0;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0) scale(0);
+            animation: bubble-float linear infinite;
+        }
+
+        /* 7 bubbles — different sizes, positions, speeds, delays */
+        .logo-bubbles span:nth-child(1) { width:10px; height:10px; left:12%; animation-duration:3.4s; animation-delay:0.0s; }
+        .logo-bubbles span:nth-child(2) { width: 6px; height: 6px;  left:27%; animation-duration:2.6s; animation-delay:0.9s; }
+        .logo-bubbles span:nth-child(3) { width:13px; height:13px;  left:44%; animation-duration:4.0s; animation-delay:0.4s; }
+        .logo-bubbles span:nth-child(4) { width: 5px; height: 5px;  left:58%; animation-duration:2.2s; animation-delay:1.6s; }
+        .logo-bubbles span:nth-child(5) { width: 8px; height: 8px;  left:72%; animation-duration:3.0s; animation-delay:0.7s; }
+        .logo-bubbles span:nth-child(6) { width: 4px; height: 4px;  left:36%; animation-duration:2.0s; animation-delay:2.2s; }
+        .logo-bubbles span:nth-child(7) { width: 9px; height: 9px;  left:85%; animation-duration:3.6s; animation-delay:1.1s; }
+
+        @keyframes bubble-float {
+            0%   { transform: translate3d(  0px,   0px, 0) scale(0);   opacity: 0;   }
+            8%   { transform: translate3d(  0px,  -6px, 0) scale(1);   opacity: 1;   }
+            50%  { transform: translate3d( -5px, -40px, 0) scale(0.9); opacity: 0.8; }
+            85%  { opacity: 0.3; }
+            100% { transform: translate3d(  5px, -80px, 0) scale(0.2); opacity: 0;   }
         }
 
         @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translate3d(0, -20px, 0); }
+            to   { opacity: 1; transform: translate3d(0,   0,   0); }
         }
 
         /* ── Typography & Header ── */
@@ -587,6 +624,15 @@
         <div class="logo-wrap">
             <div class="logo-inner">
                 <img src="logo.png" alt="Luxury Cars" class="logo">
+                <div class="logo-bubbles">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </div>
             <div style="margin-top: 8px;">
                 <button onclick="openMapModal()" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: var(--text-secondary); font-size: 12px; transition: 0.3s; backdrop-filter: blur(10px); font-family: 'Outfit', sans-serif;">
@@ -896,16 +942,19 @@ var TYPE = {
 };
 
 var SVCS = [
-    {l:"Lavagem de motor",             p:40},
-    {l:"Revitalização plásticos int.", p:25},
-    {l:"Revitalização plásticos ext.", p:20},
-    {l:"Restauração farol (Par)",      p:120},
-    {l:"Higienização bancos tecido",   p:180},
-    {l:"Higienização + Hidratação",    p:220},
-    {l:"Remoção chuva ácida",          p:20},
-    {l:"Cristalização dos vidros",     p:45},
-    {l:"Proteção cerâmica 90 dias",    p:60},
-    {l:"Limpeza do teto",              p:90},
+    {l:"Lavagem de motor",                                      p:40},
+    {l:"Revitalização plásticos int.",                          p:25},
+    {l:"Revitalização plásticos ext.",                          p:20},
+    {l:"Restauração farol (Par)",                               p:120},
+    {l:"Higienização bancos tecido",                            p:180},
+    {l:"Higienização + Hidratação",                             p:220},
+    {l:"Remoção chuva ácida",                                   p:20},
+    {l:"Cristalização dos vidros",                              p:45},
+    {l:"Cera — brilho e proteção até 15 dias",                  p:25},
+    {l:"Vonixx Hidrorepelente — brilho e proteção até 6 meses", p:50},
+    {l:"Revitalização de pintura — queimada ou fosca, até 9 meses", p:149.99},
+    {l:"Proteção SiO₂ PRO Vonixx",                             p:60,  sub:"Brilho intenso, toque liso e proteção duradoura para a pintura."},
+    {l:"Limpeza do teto",                                       p:90},
 ];
 
 /* ── State ── */
@@ -924,10 +973,12 @@ window.addEventListener("DOMContentLoaded", function() {
         row.className = "toggle-row";
         row.dataset.price = s.p;
         row.dataset.on = "0";
+        var priceStr = Number.isInteger(s.p) ? s.p + ",00" : s.p.toFixed(2).replace(".", ",");
         row.innerHTML =
             '<div class="svc-info">' +
                 '<span class="svc-label">' + s.l + '</span>' +
-                '<span class="svc-price">+ R$ ' + s.p + ',00</span>' +
+                (s.sub ? '<span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:3px;font-weight:300;">' + s.sub + '</span>' : '') +
+                '<span class="svc-price">+ R$ ' + priceStr + '</span>' +
             '</div>' +
             '<div class="check-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>';
         
@@ -1333,60 +1384,89 @@ async function renderSlots() {
 }
 
 /* ════════ PRICE ════════ */
-var descontoAtivo = 0;
+var descontoAtivo    = 0;
+var activeCouponCode = null; // tracks which coupon is applied
 
 async function aplicarCupom() {
-    var cod = document.getElementById("cupom-codigo").value.trim().toUpperCase();
+    var cod   = document.getElementById("cupom-codigo").value.trim().toUpperCase();
     var msgEl = document.getElementById("cupom-msg");
-    var btn = document.querySelector("#cupom-codigo").nextElementSibling;
+    var btn   = document.querySelector("#cupom-codigo").nextElementSibling;
 
+    // Empty field — clear coupon
     if (cod === "") {
-        descontoAtivo = 0;
+        descontoAtivo    = 0;
+        activeCouponCode = null;
         msgEl.style.display = "none";
         calcularTotal();
         return;
     }
 
     btn.textContent = "...";
-    btn.disabled = true;
+    btn.disabled    = true;
 
-    if (cod === "LUXURY8") {
-        descontoAtivo = 0.08;
-        msgEl.textContent = "✅ Cupom de 8% aplicado com sucesso!";
-        msgEl.style.color = "var(--accent)";
+    function setMsg(ok, text) {
+        msgEl.textContent  = text;
+        msgEl.style.color  = ok ? "var(--accent)" : "var(--danger)";
         msgEl.style.display = "block";
-    } else {
-        if (isFirebaseEnabled) {
-            try {
-                let doc = await db.collection("coupons").doc(cod).get();
-                if (doc.exists) {
-                    let d = doc.data().discount;
-                    descontoAtivo = d / 100;
-                    msgEl.textContent = "✅ Cupom de " + d + "% aplicado com sucesso!";
-                    msgEl.style.color = "var(--accent)";
-                    msgEl.style.display = "block";
-                } else {
-                    descontoAtivo = 0;
-                    msgEl.textContent = "❌ Cupom inválido ou expirado.";
-                    msgEl.style.color = "var(--danger)";
-                    msgEl.style.display = "block";
-                }
-            } catch(e) {
-                descontoAtivo = 0;
-                msgEl.textContent = "❌ Erro ao validar cupom.";
-                msgEl.style.color = "var(--danger)";
-                msgEl.style.display = "block";
-            }
-        } else {
-            descontoAtivo = 0;
-            msgEl.textContent = "❌ Sistema offline.";
-            msgEl.style.color = "var(--danger)";
-            msgEl.style.display = "block";
-        }
     }
-    
+
+    // ── Built-in legacy coupon ──
+    if (cod === "LUXURY8") {
+        descontoAtivo    = 0.08;
+        activeCouponCode = "LUXURY8";
+        setMsg(true, "✅ Cupom de 8% aplicado!");
+
+    // ── Firebase coupon with full validation ──
+    } else if (isFirebaseEnabled) {
+        try {
+            let snap = await db.collection("coupons").doc(cod).get();
+
+            if (!snap.exists) {
+                descontoAtivo = 0; activeCouponCode = null;
+                setMsg(false, "❌ Cupom inválido.");
+            } else {
+                let data  = snap.data();
+                let today = new Date(); today.setHours(0, 0, 0, 0);
+
+                // 1. Check expiry date
+                if (data.expiresAt) {
+                    let exp = new Date(data.expiresAt + "T00:00:00");
+                    if (exp < today) {
+                        descontoAtivo = 0; activeCouponCode = null;
+                        setMsg(false, "❌ Cupom expirado em " + data.expiresAt.split("-").reverse().join("/") + ".");
+                        btn.textContent = "Aplicar"; btn.disabled = false;
+                        calcularTotal(); return;
+                    }
+                }
+
+                // 2. Check usage limit
+                if (data.maxUses) {
+                    let used = data.usedCount || 0;
+                    if (used >= data.maxUses) {
+                        descontoAtivo = 0; activeCouponCode = null;
+                        setMsg(false, "❌ Cupom esgotado — limite de usos atingido.");
+                        btn.textContent = "Aplicar"; btn.disabled = false;
+                        calcularTotal(); return;
+                    }
+                }
+
+                // ✅ Valid
+                descontoAtivo    = data.discount / 100;
+                activeCouponCode = cod;
+                let remaining    = data.maxUses ? (data.maxUses - (data.usedCount || 0)) + " uso(s) restante(s)" : "";
+                setMsg(true, "✅ Cupom de " + data.discount + "% aplicado!" + (remaining ? " (" + remaining + ")" : ""));
+            }
+        } catch(e) {
+            descontoAtivo = 0; activeCouponCode = null;
+            setMsg(false, "❌ Erro ao validar cupom. Tente novamente.");
+        }
+    } else {
+        descontoAtivo = 0; activeCouponCode = null;
+        setMsg(false, "❌ Sistema offline — cupom não pode ser validado.");
+    }
+
     btn.textContent = "Aplicar";
-    btn.disabled = false;
+    btn.disabled    = false;
     calcularTotal();
 }
 
@@ -1491,7 +1571,7 @@ async function enviarAgendamentoWhatsApp() {
                 return; // Stop saving
             }
 
-            await db.collection("bookings").add({
+            let bookingRef = await db.collection("bookings").add({
                 userId: currentUser ? currentUser.uid : "anon",
                 clientName: cName,
                 clientPhone: cPhone,
@@ -1504,9 +1584,22 @@ async function enviarAgendamentoWhatsApp() {
                 payment: paymentMethod,
                 total: total,
                 obs: cObs,
+                coupon: activeCouponCode || null,
+                discount: descontoAtivo > 0 ? Math.round(descontoAtivo * 100) + "%" : null,
                 status: "pending",
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            // ── Increment coupon usedCount securely (only Firebase coupons, not legacy) ──
+            if (activeCouponCode && activeCouponCode !== "LUXURY8") {
+                try {
+                    await db.collection("coupons").doc(activeCouponCode).update({
+                        usedCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                } catch(ce) {
+                    console.warn("Could not increment coupon usedCount:", ce);
+                }
+            }
         } catch (e) {
             console.error("Firebase save error", e);
             saveBookingLocal(date, selSlot, fullData);
@@ -1525,6 +1618,7 @@ async function enviarAgendamentoWhatsApp() {
         (cObs ? "%F0%9F%93%9D *Obs:* " + encodeURIComponent(cObs) + "%0A" : "") +
         "%F0%9F%A7%BC *Pacote:* " + encodeURIComponent(pkg) + "%0A" +
         "%E2%9E%95 *Adicionais:* " + (extras.length ? encodeURIComponent(extras.join(", ")) : "Nenhum") + "%0A" +
+        (activeCouponCode ? "%F0%9F%8F%B7 *Cupom:* " + encodeURIComponent(activeCouponCode + " (" + Math.round(descontoAtivo*100) + "% OFF)") + "%0A" : "") +
         "%F0%9F%92%B3 *Pagamento:* " + encodeURIComponent(paymentMethod) + "%0A%0A" +
         "%F0%9F%92%B0 *Total:* " + encodeURIComponent(total);
 
