@@ -106,7 +106,7 @@
         /* ── Logo ── */
         .logo-wrap { text-align:center; margin-bottom:32px; animation: fadeInDown 0.8s ease forwards; }
         .logo {
-            max-width:210px; width:100%; mix-blend-mode:screen;
+            max-width:280px; width:100%; mix-blend-mode:screen;
             filter: drop-shadow(0 0 35px rgba(14,165,233,.4));
             animation: floatY 6s ease-in-out infinite;
         }
@@ -506,6 +506,27 @@
         <div class="welcome">
             <h1 style="font-size:32px; letter-spacing:-1px; line-height:1.2;">Bem-vindo ao<br><b>Agendamento da<br>Luxury Cars</b></h1>
             <p>Por favor, selecione o modelo do seu carro e o pacote ideal. Se o seu carro não estiver na lista, basta digitá-lo e adicioná-lo.</p>
+        </div>
+
+        <!-- ── LOCATION CARD ── -->
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 32px;">
+            <div style="padding: 24px;">
+                <div class="card-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    Nossa Localização
+                </div>
+                <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px;">
+                    Av. Anita Garibaldi - São José<br>Fraiburgo - SC, 89580-300
+                </div>
+                <a href="https://maps.google.com/?q=Av.+Anita+Garibalde+-+São+JOSÉ,+Fraiburgo+-+SC,+89580-300" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 20px; text-decoration: none; font-size: 12px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
+                    Abrir no Maps
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+            </div>
+            <!-- Embedded Google Map with Dark Mode Filter -->
+            <div style="width: 100%; height: 180px; border-top: 1px solid var(--border);">
+                <iframe src="https://maps.google.com/maps?q=Av.%20Anita%20Garibalde%20-%20S%C3%A3o%20JOS%C3%89,%20Fraiburgo%20-%20SC,%2089580-300&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0; display: block; filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%);" allowfullscreen="" loading="lazy"></iframe>
+            </div>
         </div>
 
         <div class="card">
