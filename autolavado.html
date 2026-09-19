@@ -605,6 +605,15 @@
             </div>
 
             <div class="field" style="margin-top: 32px;">
+                <label class="field-label" for="cupom-codigo">Cupom de Desconto (Opcional)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="cupom-codigo" class="search-input" placeholder="Tem um código VIP?" style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                    <button onclick="aplicarCupom()" style="background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 20px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 500;">Aplicar</button>
+                </div>
+                <div id="cupom-msg" style="font-size: 13px; margin-top: 8px; display: none;"></div>
+            </div>
+
+            <div class="field" style="margin-top: 32px;">
                 <label class="field-label">Horários</label>
                 <div class="slots" id="slotsGrid"></div>
             </div>
@@ -1187,6 +1196,28 @@ async function renderSlots() {
 }
 
 /* ════════ PRICE ════════ */
+var descontoAtivo = 0;
+
+function aplicarCupom() {
+    var cod = document.getElementById("cupom-codigo").value.trim().toUpperCase();
+    var msgEl = document.getElementById("cupom-msg");
+    if (cod === "LUXURY8") {
+        descontoAtivo = 0.08;
+        msgEl.textContent = "✅ Cupom de 8% aplicado com sucesso!";
+        msgEl.style.color = "var(--accent)";
+        msgEl.style.display = "block";
+    } else if (cod === "") {
+        descontoAtivo = 0;
+        msgEl.style.display = "none";
+    } else {
+        descontoAtivo = 0;
+        msgEl.textContent = "❌ Cupom inválido.";
+        msgEl.style.color = "var(--danger)";
+        msgEl.style.display = "block";
+    }
+    calcularTotal();
+}
+
 function calcularTotal() {
     var base = 70; // default sedan
     if (selCar) {
@@ -1200,6 +1231,11 @@ function calcularTotal() {
         extra += parseFloat(r.dataset.price);
     });
     var total = base * mult + extra;
+    
+    if (descontoAtivo > 0) {
+        total = total - (total * descontoAtivo);
+    }
+    
     document.getElementById("precio-final").textContent = "R$ " + total.toFixed(2).replace(".", ",");
 }
 
