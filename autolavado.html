@@ -449,6 +449,59 @@
         .ads-btn:hover { background: var(--text); color: #000; transform: translateY(-2px); }
         .ads-btn:active { transform: scale(0.98); }
         
+        /* ── Package Cards ── */
+        .pkg-grid {
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .pkg-card {
+            display: flex; align-items: center; gap: 16px;
+            padding: 18px 20px;
+            background: transparent;
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            cursor: pointer; user-select: none;
+            transition: var(--transition-smooth);
+            position: relative; overflow: hidden;
+        }
+        .pkg-card::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(14,165,233,0.06) 0%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .pkg-card:hover { background: var(--surface-hover); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .pkg-card:hover::before { opacity: 1; }
+        .pkg-card:active { transform: scale(0.98); }
+        .pkg-card.on { border-color: var(--accent); background: var(--surface-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(14,165,233,0.15); }
+        .pkg-card.on::before { opacity: 1; }
+        .pkg-icon {
+            font-size: 26px; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.04); border-radius: 12px;
+            flex-shrink: 0; transition: var(--transition-spring);
+        }
+        .pkg-card.on .pkg-icon { background: rgba(14,165,233,0.15); transform: scale(1.1); }
+        .pkg-body { flex: 1; }
+        .pkg-name { font-size: 15px; font-weight: 400; color: var(--text-secondary); transition: var(--transition-smooth); }
+        .pkg-card.on .pkg-name { color: var(--text); font-weight: 500; }
+        .pkg-desc { font-size: 12px; color: #555; margin-top: 3px; font-weight: 300; transition: var(--transition-smooth); }
+        .pkg-card.on .pkg-desc { color: var(--text-secondary); }
+        .pkg-badge {
+            font-size: 12px; font-weight: 600; padding: 4px 10px;
+            border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary);
+            transition: var(--transition-smooth);
+        }
+        .pkg-card.on .pkg-badge { background: var(--accent); color: #000; border-color: var(--accent); }
+        .pkg-check {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 1.5px solid var(--border); flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition-spring);
+        }
+        .pkg-check svg { width: 10px; height: 10px; stroke: transparent; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: var(--transition-smooth); }
+        .pkg-card.on .pkg-check { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
+        .pkg-card.on .pkg-check svg { stroke: #000; }
+
         .coupon-box {
             display: none; margin-top: 24px; padding: 24px;
             background: transparent;
@@ -458,6 +511,24 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .coupon-lbl { font-size: 11px; color: var(--success); text-transform: uppercase; letter-spacing: 2px; }
         .coupon-code { font-size: 28px; color: var(--text); letter-spacing: 6px; font-weight: 200; margin-top: 8px; }
+
+        /* ── Coupon security UI ── */
+        .coupon-locked {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 14px; font-weight: 300;
+        }
+        .coupon-locked svg { flex-shrink: 0; opacity: 0.5; }
+        .coupon-locked a { color: var(--accent); cursor: pointer; text-decoration: none; }
+        .coupon-locked a:hover { text-decoration: underline; }
+        .coupon-ratelimit {
+            font-size: 13px; color: var(--danger);
+            margin-top: 8px; display: none;
+        }
 
         /* ── Floating pill (Minimal) ── */
         .pill-bar {
@@ -587,6 +658,26 @@
             background: var(--danger); color: #fff; font-size: 11px; font-weight: 600;
             padding: 2px 6px; border-radius: 10px; margin-left: 8px; display: inline-block;
         }
+        /* ── Phone Validation ── */
+        .phone-wrap { position: relative; }
+        .phone-status {
+            position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; flex-shrink: 0;
+            transition: var(--transition-smooth);
+        }
+        .phone-status.valid   { display: flex; background: var(--success); color: #000; }
+        .phone-status.invalid { display: flex; background: var(--danger);  color: #fff; }
+        .phone-hint {
+            font-size: 12px; margin-top: 8px; display: none;
+            transition: var(--transition-smooth);
+        }
+        .phone-hint.valid   { display: block; color: var(--success); }
+        .phone-hint.invalid { display: block; color: var(--danger);  }
+        #client-phone.valid   { border-color: var(--success) !important; }
+        #client-phone.invalid { border-color: var(--danger)  !important; }
+
         @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
         @keyframes toastShake {
@@ -674,12 +765,43 @@
             <input type="hidden" id="tipo-veiculo" value="70">
 
             <div class="field" style="margin-top: 32px;">
-                <label class="field-label" for="tipo-lavacao">Pacote de serviço</label>
-                <select id="tipo-lavacao" class="field-select" onchange="calcularTotal()">
-                    <option value="1">Lavagem Completa</option>
-                    <option value="0.5">Apenas Exterior (−50%)</option>
-                    <option value="0.5">Apenas Interior (−50%)</option>
-                </select>
+                <label class="field-label">Pacote de serviço</label>
+                <!-- Hidden value read by calcularTotal() -->
+                <input type="hidden" id="pkg-mult" value="1">
+                <input type="hidden" id="pkg-name-val" value="Lavagem Completa">
+                <div class="pkg-grid" id="pkgGrid">
+
+                    <div class="pkg-card on" data-mult="1" data-pkg="Lavagem Completa" onclick="selectPkg(this)">
+                        <div class="pkg-icon">🧴</div>
+                        <div class="pkg-body">
+                            <div class="pkg-name">Lavagem Completa</div>
+                            <div class="pkg-desc">Interior + Exterior — serviço premium completo</div>
+                        </div>
+                        <div class="pkg-badge">Preço cheio</div>
+                        <div class="pkg-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    </div>
+
+                    <div class="pkg-card" data-mult="0.5" data-pkg="Apenas Exterior" onclick="selectPkg(this)">
+                        <div class="pkg-icon">✨</div>
+                        <div class="pkg-body">
+                            <div class="pkg-name">Apenas Exterior</div>
+                            <div class="pkg-desc">Lataria, rodas, vidros e acabamento externo</div>
+                        </div>
+                        <div class="pkg-badge">−50%</div>
+                        <div class="pkg-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    </div>
+
+                    <div class="pkg-card" data-mult="0.5" data-pkg="Apenas Interior" onclick="selectPkg(this)">
+                        <div class="pkg-icon">💎</div>
+                        <div class="pkg-body">
+                            <div class="pkg-name">Apenas Interior</div>
+                            <div class="pkg-desc">Bancos, painel, tapetes e acabamento interno</div>
+                        </div>
+                        <div class="pkg-badge">−50%</div>
+                        <div class="pkg-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
@@ -709,12 +831,27 @@
 
             <div class="field" style="margin-bottom: 24px;">
                 <label class="field-label" for="client-name">Seu Nome</label>
-                <input type="text" id="client-name" class="search-input" placeholder="Como devemos chamá-lo?" style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box;">
+                <input type="text" id="client-name" class="search-input" placeholder="Como devemos chamá-lo?" style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box;" oninput="this.value = this.value.replace(/[0-9]/g, '')">
             </div>
 
             <div class="field" style="margin-bottom: 24px;">
                 <label class="field-label" for="client-phone">Seu WhatsApp</label>
-                <input type="tel" id="client-phone" class="search-input" placeholder="(DD) 90000-0000" style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box;">
+                <div class="phone-wrap">
+                    <input
+                        type="tel"
+                        id="client-phone"
+                        class="search-input"
+                        placeholder="(DD) 90000-0000"
+                        maxlength="15"
+                        inputmode="numeric"
+                        autocomplete="tel"
+                        style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box; padding-right: 52px; transition: border-color 0.3s ease;"
+                        oninput="formatPhone(this)"
+                        onblur="validatePhoneBlur(this)"
+                    >
+                    <div class="phone-status" id="phone-status-icon"></div>
+                </div>
+                <div class="phone-hint" id="phone-hint"></div>
             </div>
 
             <div class="field date-wrap">
@@ -752,12 +889,28 @@
             </div>
 
             <div class="field" style="margin-top: 32px;">
-                <label class="field-label" for="cupom-codigo">Cupom de Desconto (Opcional)</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="cupom-codigo" class="search-input" placeholder="Tem um código VIP?" style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box; text-transform: uppercase;">
-                    <button onclick="aplicarCupom()" style="background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 20px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 500;">Aplicar</button>
+                <label class="field-label">Cupom de Desconto (Opcional)</label>
+
+                <!-- Shown when NOT logged in -->
+                <div class="coupon-locked" id="cupom-locked-msg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Você precisa <a onclick="openDashboard()">fazer login</a> para usar um cupom de desconto.</span>
                 </div>
-                <div id="cupom-msg" style="font-size: 13px; margin-top: 8px; display: none;"></div>
+
+                <!-- Shown when logged in -->
+                <div id="cupom-input-wrap" style="display:none;">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="cupom-codigo" class="search-input"
+                            placeholder="Tem um código VIP?"
+                            maxlength="20"
+                            style="background: var(--bg); border: 1px solid var(--border); width: 100%; box-sizing: border-box; text-transform: uppercase; letter-spacing: 2px;"
+                            oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()"
+                        >
+                        <button id="cupom-apply-btn" onclick="aplicarCupom()" style="background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 20px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 500; white-space:nowrap;">Aplicar</button>
+                    </div>
+                    <div id="cupom-msg" style="font-size: 13px; margin-top: 8px; display: none;"></div>
+                    <div class="coupon-ratelimit" id="cupom-ratelimit">⛔ Muitas tentativas. Aguarde <span id="cupom-countdown">60</span>s antes de tentar novamente.</div>
+                </div>
             </div>
 
             <div class="field" style="margin-top: 32px;">
@@ -771,7 +924,7 @@
     <div class="pill-bar">
         <div>
             <div class="pill-total-lbl">Estimativa</div>
-            <div class="pill-price" id="precio-final">R$ 70,00</div>
+            <div class="pill-price" id="precio-final">R$ 0,00</div>
         </div>
         <button class="pill-btn" onclick="nextStep()">
             <span id="btnLabel">Continuar</span>
@@ -1012,6 +1165,15 @@ window.addEventListener("DOMContentLoaded", function() {
     calcularTotal();
     initSearch();
 });
+
+/* ════════ PACKAGE SELECTOR ════════ */
+function selectPkg(el) {
+    document.querySelectorAll(".pkg-card").forEach(function(c) { c.classList.remove("on"); });
+    el.classList.add("on");
+    document.getElementById("pkg-mult").value     = el.dataset.mult;
+    document.getElementById("pkg-name-val").value = el.dataset.pkg;
+    calcularTotal();
+}
 
 /* ════════ CAR SEARCH ════════ */
 function norm(s) {
@@ -1285,14 +1447,33 @@ async function renderSlots() {
     grid.innerHTML = "";
 
     if (!date) return;
+
+    grid.innerHTML = "<div style='color:var(--text-secondary);text-align:center;width:100%;padding:16px;'>Verificando disponibilidade...</div>";
+
+    // ── Check if store is closed on this date ──
+    if (isFirebaseEnabled) {
+        try {
+            var closedSnap = await db.collection("closedDates").doc(date).get();
+            if (closedSnap.exists) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); padding: 32px 20px; border-radius: var(--radius-md); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px;">
+                        <span style="font-size: 32px;">🚫</span>
+                        <h3 style="margin:0; font-size: 18px; color: var(--danger); font-weight: 500;">Fechado neste dia</h3>
+                        <p style="margin:0; font-size: 14px; color: var(--text-secondary);">O estabelecimento não operará nesta data. Por favor, escolha outro dia para o seu agendamento.</p>
+                    </div>
+                `;
+                return;
+            }
+        } catch(e) {
+            console.warn("Could not check closed dates", e);
+        }
+    }
     
     // Fallback if they typed a car but didn't click the dropdown
     let currentCar = selCar;
     if (!currentCar) {
         currentCar = { n: document.getElementById("carInput").value || "Carro Genérico", t: "sedan" };
     }
-
-    grid.innerHTML = "<div style='color:var(--text-secondary);text-align:center;width:100%;padding:16px;'>Calculando espaços...</div>";
 
     let usage = {};
     generateAllSlots().forEach(m => usage[m] = 0);
@@ -1385,99 +1566,198 @@ async function renderSlots() {
 
 /* ════════ PRICE ════════ */
 var descontoAtivo    = 0;
-var activeCouponCode = null; // tracks which coupon is applied
+var activeCouponCode = null;
 
-async function aplicarCupom() {
-    var cod   = document.getElementById("cupom-codigo").value.trim().toUpperCase();
-    var msgEl = document.getElementById("cupom-msg");
-    var btn   = document.querySelector("#cupom-codigo").nextElementSibling;
+/* ─────────────────────────────────────────────────
+   COUPON SECURITY LAYER
+   • Login required
+   • Rate limit: 5 attempts per session, then 60s lockout
+   • 3s cooldown between attempts
+   • Sanitized input (alphanumeric only, max 20 chars)
+   • Firestore read validation (expiry, global limit, per-user limit)
+   • Re-validation at booking time (Firestore transaction)
+──────────────────────────────────────────────────── */
+var _cupomAttempts   = 0;
+var _cupomMaxAttempts = 5;
+var _cupomLocked     = false;
+var _cupomLastTs     = 0;
+var _cupomCooldownMs = 3000; // 3s between attempts
+var _cupomLockoutMs  = 60000; // 60s lockout after max attempts
 
-    // Empty field — clear coupon
-    if (cod === "") {
+function _updateCouponUI() {
+    var locked  = document.getElementById("cupom-locked-msg");
+    var wrap    = document.getElementById("cupom-input-wrap");
+    if (!locked || !wrap) return;
+    if (currentUser) {
+        locked.style.display = "none";
+        wrap.style.display   = "block";
+    } else {
+        locked.style.display = "flex";
+        wrap.style.display   = "none";
+        // Clear coupon if user logged out
         descontoAtivo    = 0;
         activeCouponCode = null;
-        msgEl.style.display = "none";
+        calcularTotal();
+    }
+}
+
+function _startLockoutCountdown() {
+    var countEl = document.getElementById("cupom-countdown");
+    var rlEl    = document.getElementById("cupom-ratelimit");
+    var btn     = document.getElementById("cupom-apply-btn");
+    if (!rlEl) return;
+    rlEl.style.display = "block";
+    if (btn) btn.disabled = true;
+    var remaining = 60;
+    if (countEl) countEl.textContent = remaining;
+    var interval = setInterval(function() {
+        remaining--;
+        if (countEl) countEl.textContent = remaining;
+        if (remaining <= 0) {
+            clearInterval(interval);
+            _cupomLocked   = false;
+            _cupomAttempts = 0;
+            rlEl.style.display = "none";
+            if (btn) btn.disabled = false;
+        }
+    }, 1000);
+}
+
+async function aplicarCupom() {
+    // ── GUARD 1: Must be logged in ──
+    if (!currentUser) {
+        openDashboard();
+        return;
+    }
+
+    var input = document.getElementById("cupom-codigo");
+    var msgEl = document.getElementById("cupom-msg");
+    var btn   = document.getElementById("cupom-apply-btn");
+
+    // ── GUARD 2: Rate limit lockout ──
+    if (_cupomLocked) {
+        return;
+    }
+
+    // ── GUARD 3: Cooldown between attempts ──
+    var now = Date.now();
+    if (now - _cupomLastTs < _cupomCooldownMs) {
+        var wait = Math.ceil((_cupomCooldownMs - (now - _cupomLastTs)) / 1000);
+        _setCupomMsg(msgEl, false, "⏳ Aguarde " + wait + "s antes de tentar novamente.");
+        return;
+    }
+
+    // ── Sanitize input (alphanumeric only, uppercase, max 20) ──
+    var raw = (input ? input.value : "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().substring(0, 20);
+    if (input) input.value = raw;
+
+    // Empty field — clear coupon
+    if (raw === "") {
+        descontoAtivo    = 0;
+        activeCouponCode = null;
+        if (msgEl) msgEl.style.display = "none";
         calcularTotal();
         return;
     }
 
-    btn.textContent = "...";
-    btn.disabled    = true;
-
-    function setMsg(ok, text) {
-        msgEl.textContent  = text;
-        msgEl.style.color  = ok ? "var(--accent)" : "var(--danger)";
-        msgEl.style.display = "block";
+    // ── Increment attempt counter ──
+    _cupomAttempts++;
+    _cupomLastTs = Date.now();
+    if (_cupomAttempts >= _cupomMaxAttempts) {
+        _cupomLocked = true;
+        _startLockoutCountdown();
     }
 
-    // ── Built-in legacy coupon ──
-    if (cod === "LUXURY8") {
-        descontoAtivo    = 0.08;
-        activeCouponCode = "LUXURY8";
-        setMsg(true, "✅ Cupom de 8% aplicado!");
+    if (btn) { btn.textContent = "..."; btn.disabled = true; }
 
-    // ── Firebase coupon with full validation ──
-    } else if (isFirebaseEnabled) {
-        try {
-            let snap = await db.collection("coupons").doc(cod).get();
-
-            if (!snap.exists) {
-                descontoAtivo = 0; activeCouponCode = null;
-                setMsg(false, "❌ Cupom inválido.");
-            } else {
-                let data  = snap.data();
-                let today = new Date(); today.setHours(0, 0, 0, 0);
-
-                // 1. Check expiry date
-                if (data.expiresAt) {
-                    let exp = new Date(data.expiresAt + "T00:00:00");
-                    if (exp < today) {
-                        descontoAtivo = 0; activeCouponCode = null;
-                        setMsg(false, "❌ Cupom expirado em " + data.expiresAt.split("-").reverse().join("/") + ".");
-                        btn.textContent = "Aplicar"; btn.disabled = false;
-                        calcularTotal(); return;
-                    }
-                }
-
-                // 2. Check usage limit
-                if (data.maxUses) {
-                    let used = data.usedCount || 0;
-                    if (used >= data.maxUses) {
-                        descontoAtivo = 0; activeCouponCode = null;
-                        setMsg(false, "❌ Cupom esgotado — limite de usos atingido.");
-                        btn.textContent = "Aplicar"; btn.disabled = false;
-                        calcularTotal(); return;
-                    }
-                }
-
-                // ✅ Valid
-                descontoAtivo    = data.discount / 100;
-                activeCouponCode = cod;
-                let remaining    = data.maxUses ? (data.maxUses - (data.usedCount || 0)) + " uso(s) restante(s)" : "";
-                setMsg(true, "✅ Cupom de " + data.discount + "% aplicado!" + (remaining ? " (" + remaining + ")" : ""));
-            }
-        } catch(e) {
-            descontoAtivo = 0; activeCouponCode = null;
-            setMsg(false, "❌ Erro ao validar cupom. Tente novamente.");
-        }
-    } else {
+    // ── GUARD 4: Firebase required ──
+    if (!isFirebaseEnabled) {
         descontoAtivo = 0; activeCouponCode = null;
-        setMsg(false, "❌ Sistema offline — cupom não pode ser validado.");
+        _setCupomMsg(msgEl, false, "❌ Sistema offline — cupom não pode ser validado.");
+        if (btn) { btn.textContent = "Aplicar"; btn.disabled = false; }
+        return;
     }
 
-    btn.textContent = "Aplicar";
-    btn.disabled    = false;
+    try {
+        var snap = await db.collection("coupons").doc(raw).get();
+
+        if (!snap.exists) {
+            descontoAtivo = 0; activeCouponCode = null;
+            _setCupomMsg(msgEl, false, "❌ Cupom inválido.");
+
+        } else {
+            var data  = snap.data();
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+
+            // ── Check 1: Expiry date ──
+            if (data.expiresAt) {
+                var exp = new Date(data.expiresAt + "T00:00:00");
+                if (exp < today) {
+                    descontoAtivo = 0; activeCouponCode = null;
+                    _setCupomMsg(msgEl, false, "❌ Cupom expirado em " + data.expiresAt.split("-").reverse().join("/") + ".");
+                    if (btn) { btn.textContent = "Aplicar"; btn.disabled = false; }
+                    calcularTotal(); return;
+                }
+            }
+
+            // ── Check 2: Global usage limit ──
+            if (data.maxUses) {
+                var used = data.usedCount || 0;
+                if (used >= data.maxUses) {
+                    descontoAtivo = 0; activeCouponCode = null;
+                    _setCupomMsg(msgEl, false, "❌ Cupom esgotado — limite de usos atingido.");
+                    if (btn) { btn.textContent = "Aplicar"; btn.disabled = false; }
+                    calcularTotal(); return;
+                }
+            }
+
+            // ── Check 3: Per-user limit (1 use per user per coupon) ──
+            var userUsages = data.userUsages || {};
+            var myUses     = userUsages[currentUser.uid] || 0;
+            var maxPerUser = data.maxUsesPerUser || 1; // Default: 1 use per user
+            if (myUses >= maxPerUser) {
+                descontoAtivo = 0; activeCouponCode = null;
+                _setCupomMsg(msgEl, false, "❌ Você já utilizou este cupom. Cada cupom só pode ser usado uma vez por cliente.");
+                if (btn) { btn.textContent = "Aplicar"; btn.disabled = false; }
+                calcularTotal(); return;
+            }
+
+            // ── ✅ Valid ──
+            _cupomAttempts = 0; // Reset counter on success
+            descontoAtivo    = data.discount / 100;
+            activeCouponCode = raw;
+            var remaining = data.maxUses ? (data.maxUses - (data.usedCount || 0)) + " uso(s) restante(s)" : "";
+            _setCupomMsg(msgEl, true, "✅ Cupom de " + data.discount + "% aplicado!" + (remaining ? " (" + remaining + ")" : ""));
+        }
+    } catch(e) {
+        descontoAtivo = 0; activeCouponCode = null;
+        _setCupomMsg(msgEl, false, "❌ Erro ao validar cupom. Tente novamente.");
+        console.error("[CouponSec] Validation error:", e);
+    }
+
+    if (btn && !_cupomLocked) { btn.textContent = "Aplicar"; btn.disabled = false; }
     calcularTotal();
 }
 
+function _setCupomMsg(el, ok, text) {
+    if (!el) return;
+    el.textContent   = text;
+    el.style.color   = ok ? "var(--success)" : "var(--danger)";
+    el.style.display = "block";
+}
+
 function calcularTotal() {
-    var base = 70; // default sedan
-    if (selCar) {
-        if (selCar.t === 'suv') base = 90;
-        else if (selCar.t === 'truck') base = 110;
+    // If no car selected yet, show zero
+    if (!selCar) {
+        document.getElementById("precio-final").textContent = "R$ 0,00";
+        return;
     }
 
-    var mult  = parseFloat(document.getElementById("tipo-lavacao").value) || 1;
+    var base = 70;
+    if (selCar.t === 'suv')   base = 90;
+    else if (selCar.t === 'truck') base = 110;
+
+    var mult  = parseFloat(document.getElementById("pkg-mult").value) || 1;
     var extra = 0;
     document.querySelectorAll(".toggle-row[data-on='1']").forEach(function(r) {
         extra += parseFloat(r.dataset.price);
@@ -1492,20 +1772,108 @@ function calcularTotal() {
 }
 
 
+/* ════════ PHONE VALIDATION ════════ */
+// Brazilian mobile format: (DD) 9XXXX-XXXX  (11 digits)
+// Accepts also landlines: (DD) XXXX-XXXX    (10 digits)
+function _isValidPhone(digits) {
+    // Strips everything except digits
+    var d = (digits || "").replace(/\D/g, "");
+    if (d.length < 10 || d.length > 11) return false;
+    var dd = parseInt(d.substring(0, 2));
+    if (dd < 11 || dd > 99) return false; // Invalid area code
+    if (d.length === 11 && d[2] !== '9') return false; // Mobile must start with 9
+    return true;
+}
+
+function formatPhone(input) {
+    var digits = input.value.replace(/\D/g, "").substring(0, 11);
+    var formatted = "";
+    if (digits.length === 0) {
+        formatted = "";
+    } else if (digits.length <= 2) {
+        formatted = "(" + digits;
+    } else if (digits.length <= 6) {
+        formatted = "(" + digits.substring(0, 2) + ") " + digits.substring(2);
+    } else if (digits.length <= 10) {
+        formatted = "(" + digits.substring(0, 2) + ") " + digits.substring(2, 6) + "-" + digits.substring(6);
+    } else {
+        formatted = "(" + digits.substring(0, 2) + ") " + digits.substring(2, 7) + "-" + digits.substring(7);
+    }
+    input.value = formatted;
+
+    var icon  = document.getElementById("phone-status-icon");
+    var hint  = document.getElementById("phone-hint");
+    var valid = _isValidPhone(digits);
+
+    if (digits.length === 0) {
+        input.classList.remove("valid", "invalid");
+        if (icon) { icon.className = "phone-status"; icon.textContent = ""; }
+        if (hint) { hint.className = "phone-hint"; }
+        return;
+    }
+
+    if (valid) {
+        input.classList.add("valid"); input.classList.remove("invalid");
+        if (icon) { icon.className = "phone-status valid"; icon.textContent = "✔"; }
+        if (hint) { hint.className = "phone-hint valid"; hint.textContent = "✅ Número válido"; }
+    } else {
+        input.classList.remove("valid"); input.classList.add("invalid");
+        if (icon) { icon.className = "phone-status invalid"; icon.textContent = "✕"; }
+        if (hint) {
+            hint.className = "phone-hint invalid";
+            if (digits.length < 10) {
+                hint.textContent = "❌ Número incompleto — informe o DDD + número (ex: 49 99999-9999)";
+            } else {
+                hint.textContent = "❌ Número inválido — verifique o DDD e o formato";
+            }
+        }
+    }
+}
+
+function validatePhoneBlur(input) {
+    var digits = input.value.replace(/\D/g, "");
+    if (digits.length > 0) formatPhone(input); // Show error state on blur
+}
+
 /* ════════ WHATSAPP ════════ */
 async function enviarAgendamentoWhatsApp() {
-    var cName = document.getElementById("client-name").value.trim();
+    var cName  = document.getElementById("client-name").value.trim();
     var cPhone = document.getElementById("client-phone").value.trim();
-    var cObs = document.getElementById("client-obs").value.trim();
+    var cObs   = document.getElementById("client-obs").value.trim();
 
-    if (!cName || !cPhone) { showToast("Por favor, preencha seu nome e WhatsApp."); return; }
+    // ── Validate name ──
+    if (!cName) {
+        showToast("Por favor, preencha seu nome antes de agendar.");
+        document.getElementById("client-name").focus();
+        return;
+    }
+
+    // ── Validate phone ──
+    if (!cPhone) {
+        showToast("Por favor, preencha seu WhatsApp antes de agendar.");
+        document.getElementById("client-phone").focus();
+        return;
+    }
+    var phoneDigits = cPhone.replace(/\D/g, "");
+    if (!_isValidPhone(phoneDigits)) {
+        showToast("❌ Número de WhatsApp inválido. Informe DDD + número (ex: 49 99999-9999).");
+        var phoneEl = document.getElementById("client-phone");
+        phoneEl.classList.add("invalid"); phoneEl.classList.remove("valid");
+        var icon = document.getElementById("phone-status-icon");
+        if (icon) { icon.className = "phone-status invalid"; icon.textContent = "✕"; }
+        var hint = document.getElementById("phone-hint");
+        if (hint) { hint.className = "phone-hint invalid"; hint.textContent = "❌ Número inválido — inclua o DDD e o número completo"; }
+        phoneEl.focus();
+        return;
+    }
+
     if (!selSlot) { showToast("Por favor, selecione um horário disponível na lista."); return; }
 
     var date   = document.getElementById("fecha-agendamento").value;
     var dFmt   = date.split("-").reverse().join("/");
     var car    = selCar ? selCar.n + " (" + TYPE[selCar.t].lbl + ")" : "Não especificado";
-    var pkgEl  = document.getElementById("tipo-lavacao");
-    var pkg    = pkgEl.options[pkgEl.selectedIndex].text;
+    var pkgEl  = document.getElementById("pkg-name-val");
+    var pkg    = pkgEl ? pkgEl.value : "Lavagem Completa";
     
     var payOpt = document.querySelector(".pay-option.on");
     var paymentMethod = payOpt ? payOpt.dataset.val : "Pix";
@@ -1590,14 +1958,71 @@ async function enviarAgendamentoWhatsApp() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // ── Increment coupon usedCount securely (only Firebase coupons, not legacy) ──
-            if (activeCouponCode && activeCouponCode !== "LUXURY8") {
+            // ── Increment coupon usedCount securely using Firestore Transaction ──
+            // This is atomic: prevents race conditions (two users using same coupon simultaneously)
+            if (activeCouponCode) {
                 try {
-                    await db.collection("coupons").doc(activeCouponCode).update({
-                        usedCount: firebase.firestore.FieldValue.increment(1)
+                    var couponRef = db.collection("coupons").doc(activeCouponCode);
+                    var uid = currentUser ? currentUser.uid : null;
+
+                    await db.runTransaction(async function(tx) {
+                        var couponDoc = await tx.get(couponRef);
+
+                        if (!couponDoc.exists) {
+                            throw new Error("COUPON_NOT_FOUND");
+                        }
+
+                        var cData = couponDoc.data();
+
+                        // ── Re-validate expiry inside transaction ──
+                        if (cData.expiresAt) {
+                            var exp = new Date(cData.expiresAt + "T00:00:00");
+                            var td  = new Date(); td.setHours(0,0,0,0);
+                            if (exp < td) throw new Error("COUPON_EXPIRED");
+                        }
+
+                        // ── Re-validate global limit inside transaction ──
+                        if (cData.maxUses && (cData.usedCount || 0) >= cData.maxUses) {
+                            throw new Error("COUPON_EXHAUSTED");
+                        }
+
+                        // ── Re-validate per-user limit inside transaction ──
+                        if (uid) {
+                            var userUsages  = cData.userUsages || {};
+                            var myUses      = userUsages[uid] || 0;
+                            var maxPerUser  = cData.maxUsesPerUser || 1;
+                            if (myUses >= maxPerUser) {
+                                throw new Error("COUPON_USER_LIMIT");
+                            }
+                        }
+
+                        // ── Atomically increment global count + per-user count ──
+                        var updatePayload = {
+                            usedCount: firebase.firestore.FieldValue.increment(1)
+                        };
+                        if (uid) {
+                            updatePayload["userUsages." + uid] = firebase.firestore.FieldValue.increment(1);
+                        }
+                        tx.update(couponRef, updatePayload);
                     });
+
                 } catch(ce) {
-                    console.warn("Could not increment coupon usedCount:", ce);
+                    var errMsg = ce.message || "";
+                    if (errMsg === "COUPON_EXPIRED") {
+                        showToast("❌ Cupom expirado — desconto removido.");
+                    } else if (errMsg === "COUPON_EXHAUSTED") {
+                        showToast("❌ Cupom esgotado — desconto removido.");
+                    } else if (errMsg === "COUPON_USER_LIMIT") {
+                        showToast("❌ Você já usou este cupom anteriormente — desconto removido.");
+                    } else if (errMsg === "COUPON_NOT_FOUND") {
+                        showToast("❌ Cupom não encontrado — desconto removido.");
+                    } else {
+                        console.warn("[CouponSec] Could not commit coupon usage:", ce);
+                    }
+                    // Invalidate the coupon on the client side
+                    descontoAtivo    = 0;
+                    activeCouponCode = null;
+                    calcularTotal();
                 }
             }
         } catch (e) {
@@ -1642,6 +2067,8 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
             currentUser = null;
             document.getElementById("authBtn").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
         }
+        // Update coupon UI based on login state
+        _updateCouponUI();
     });
 }
 
