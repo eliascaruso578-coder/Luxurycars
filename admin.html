@@ -225,6 +225,7 @@
         <div class="tab" id="tab-hist" onclick="switchTab('hist')">Histórico Geral</div>
         <div class="tab" id="tab-cupons" onclick="switchTab('cupons')">Gestão de Cupons</div>
         <div class="tab" id="tab-fechados" onclick="switchTab('fechados')">Dias Fechados</div>
+        <div class="tab" id="tab-clientes" onclick="switchTab('clientes')">Clientes</div>
     </div>
 
     <div id="view-dia">
@@ -315,6 +316,21 @@
         </div>
     </div>
 
+    <!-- VIEW CLIENTES -->
+    <div id="view-clientes" style="display: none;">
+        <div class="stats-grid" style="grid-template-columns: 1fr;">
+            <div class="stat-card" style="text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="lbl" style="margin-bottom: 4px;">Total de Usuários Registrados</div>
+                    <div class="val" id="stat-total-users" style="color: var(--accent);">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="booking-list" id="clientes-container">
+            <!-- Rendered via JS -->
+        </div>
+    </div>
+
 </div>
 
 <!-- ═══ CONFIRM MODAL ═══ -->
@@ -367,6 +383,7 @@
             document.getElementById('view-hist').style.display = 'none';
             document.getElementById('view-cupons').style.display = 'none';
             document.getElementById('view-fechados').style.display = 'none';
+            document.getElementById('view-clientes').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'flex';
             loadBookings();
         } else if (tabId === 'hist') {
@@ -374,6 +391,7 @@
             document.getElementById('view-hist').style.display = 'block';
             document.getElementById('view-cupons').style.display = 'none';
             document.getElementById('view-fechados').style.display = 'none';
+            document.getElementById('view-clientes').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'none';
             loadHistory();
         } else if (tabId === 'cupons') {
@@ -381,6 +399,7 @@
             document.getElementById('view-hist').style.display = 'none';
             document.getElementById('view-cupons').style.display = 'block';
             document.getElementById('view-fechados').style.display = 'none';
+            document.getElementById('view-clientes').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'none';
             loadCoupons();
         } else if (tabId === 'fechados') {
@@ -388,8 +407,17 @@
             document.getElementById('view-hist').style.display = 'none';
             document.getElementById('view-cupons').style.display = 'none';
             document.getElementById('view-fechados').style.display = 'block';
+            document.getElementById('view-clientes').style.display = 'none';
             document.querySelector('.date-picker-wrap').style.display = 'none';
             loadClosedDates();
+        } else if (tabId === 'clientes') {
+            document.getElementById('view-dia').style.display = 'none';
+            document.getElementById('view-hist').style.display = 'none';
+            document.getElementById('view-cupons').style.display = 'none';
+            document.getElementById('view-fechados').style.display = 'none';
+            document.getElementById('view-clientes').style.display = 'block';
+            document.querySelector('.date-picker-wrap').style.display = 'none';
+            loadClientes();
         }
     }
 
@@ -618,6 +646,59 @@
                 console.error("Error deleting closed date", e);
                 showToast("Erro ao abrir dia", "error");
             }
+        }
+    }
+
+    /* ════════ CLIENTES (USUÁRIOS) ════════ */
+    async function loadClientes() {
+        const container = document.getElementById("clientes-container");
+        container.innerHTML = "<div class='empty-state'>Carregando clientes...</div>";
+
+        if (!isFirebaseEnabled) {
+            container.innerHTML = "<div class='empty-state'>Firebase não configurado.</div>";
+            document.getElementById("stat-total-users").textContent = "0";
+            return;
+        }
+
+        try {
+            const snap = await db.collection("users").orderBy("lastLogin", "desc").get();
+            if (snap.empty) {
+                container.innerHTML = "<div class='empty-state'>Nenhum cliente registrado ainda.</div>";
+                document.getElementById("stat-total-users").textContent = "0";
+                return;
+            }
+
+            container.innerHTML = "";
+            document.getElementById("stat-total-users").textContent = snap.size;
+
+            snap.forEach(doc => {
+                let u = doc.data();
+                let lastLoginStr = "Desconhecido";
+                if (u.lastLogin && u.lastLogin.toDate) {
+                    let d = u.lastLogin.toDate();
+                    lastLoginStr = d.toLocaleDateString('pt-BR') + " às " + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                }
+                
+                let html = `
+                    <div class="booking-card" style="justify-content: flex-start;">
+                        <img src="${u.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(u.displayName||'U')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--border);">
+                        <div class="b-info" style="flex:1; margin-left:16px;">
+                            <div class="b-car" style="display:flex; align-items:center; gap:8px;">
+                                ${u.displayName || "Usuário Sem Nome"}
+                                <span class="badge" style="background:rgba(14,165,233,0.1); color:var(--accent); font-size:10px;">${u.loginCount || 1} logins</span>
+                            </div>
+                            <div class="b-details" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                                <span>📧 ${u.email || "Sem e-mail"}</span>
+                                <span>🕒 Último acesso: ${lastLoginStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        } catch (e) {
+            console.error("Firebase error loading users", e);
+            container.innerHTML = "<div class='empty-state'>Erro ao carregar clientes.</div>";
         }
     }
 

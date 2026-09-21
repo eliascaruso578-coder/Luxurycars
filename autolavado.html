@@ -2086,7 +2086,33 @@ function loginGoogle() {
     }
 
     var provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).then(function(result) {
+    firebase.auth().signInWithPopup(provider).then(async function(result) {
+        var user = result.user;
+        try {
+            var userRef = db.collection("users").doc(user.uid);
+            var snap = await userRef.get();
+            if (snap.exists) {
+                await userRef.update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    loginCount: firebase.firestore.FieldValue.increment(1),
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    email: user.email
+                });
+            } else {
+                await userRef.set({
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    loginCount: 1
+                });
+            }
+        } catch(e) {
+            console.error("Error saving user data", e);
+        }
         openDashboard();
     }).catch(function(error) {
         alert("Erro no Login: " + error.message);
