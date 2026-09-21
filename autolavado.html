@@ -976,8 +976,8 @@
         <p>Coloque o nome do veículo e selecione a categoria para calcularmos o valor:</p>
         
         <div style="display:flex; gap:12px; margin-bottom:16px;">
-            <input type="text" id="customCarBrand" class="search-input" placeholder="Marca (Ex: Chevrolet)" style="background: var(--bg); border: 1px solid var(--border); width: 50%; box-sizing: border-box;">
-            <input type="text" id="customCarName" class="search-input" placeholder="Modelo (Ex: Tracker)" style="background: var(--bg); border: 1px solid var(--border); width: 50%; box-sizing: border-box;">
+            <input type="text" id="customCarBrand" class="search-input" placeholder="Marca (Ex: Chevrolet)" style="background: var(--bg); border: 1px solid var(--border); width: 50%; box-sizing: border-box;" oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')">
+            <input type="text" id="customCarName" class="search-input" placeholder="Modelo (Ex: Tracker)" style="background: var(--bg); border: 1px solid var(--border); width: 50%; box-sizing: border-box;" oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')">
         </div>
         
         <div class="cat-grid">
@@ -2055,6 +2055,84 @@ async function enviarAgendamentoWhatsApp() {
 /* ════════ AUTHENTICATION & DASHBOARD ════════ */
 var currentUser = null;
 
+async function checkBan(uid, isAnon) {
+    if(!isFirebaseEnabled) return false;
+    try {
+        var col = isAnon ? "anonymous_users" : "users";
+        var doc = await db.collection(col).doc(uid).get();
+        if(doc.exists && doc.data().blocked) {
+            document.body.innerHTML = '<div style="display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; background:#000; color:#fff; text-align:center; padding:20px; font-family:\'Outfit\',sans-serif;"><div><h1 style="color:#ef4444; margin-bottom:12px; font-size:32px;">Acesso Negado</h1><p style="color:#aaa; font-size:16px;">O seu acesso foi revogado pelo administrador.</p></div></div>';
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+async function trackAnonymousVisitor() {
+    if (!isFirebaseEnabled) return;
+    
+    let anonId = localStorage.getItem("lux_anon_id");
+    if (!anonId) {
+        anonId = "Visitante_" + Math.random().toString(36).substr(2, 6).toUpperCase();
+        localStorage.setItem("lux_anon_id", anonId);
+    }
+    
+    if(await checkBan(anonId, true)) return;
+    if (sessionStorage.getItem("lux_anon_tracked")) return;
+
+    try {
+        var ref = db.collection("anonymous_users").doc(anonId);
+        var snap = await ref.get();
+        if (snap.exists) {
+            await ref.update({
+                lastVisit: firebase.firestore.FieldValue.serverTimestamp(),
+                visitCount: firebase.firestore.FieldValue.increment(1)
+            });
+        } else {
+            await ref.set({
+                uid: anonId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastVisit: firebase.firestore.FieldValue.serverTimestamp(),
+                visitCount: 1,
+                isAnonymous: true
+            });
+        }
+        sessionStorage.setItem("lux_anon_tracked", "true");
+    } catch(e) { console.error("Anon tracking err", e); }
+}
+
+async function trackUserSession(user) {
+    if(await checkBan(user.uid, false)) return;
+    if (sessionStorage.getItem("lux_session_tracked")) return;
+    
+    try {
+        var userRef = db.collection("users").doc(user.uid);
+        var snap = await userRef.get();
+        if (snap.exists) {
+            await userRef.update({
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                loginCount: firebase.firestore.FieldValue.increment(1),
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                email: user.email
+            });
+        } else {
+            await userRef.set({
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                loginCount: 1
+            });
+        }
+        sessionStorage.setItem("lux_session_tracked", "true");
+    } catch(e) {
+        console.error("Error saving user data", e);
+    }
+}
+
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
@@ -2063,12 +2141,24 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
             document.getElementById("client-name").value = user.displayName || "";
             let savedPhone = localStorage.getItem("lux_phone_" + user.uid);
             if (savedPhone) document.getElementById("client-phone").value = savedPhone;
+            
+            trackUserSession(user);
         } else {
             currentUser = null;
             document.getElementById("authBtn").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+            trackAnonymousVisitor();
         }
         // Update coupon UI based on login state
         _updateCouponUI();
+    });
+
+    // Handle iOS redirect login results
+    firebase.auth().getRedirectResult().then(function(result) {
+        if (result && result.user) {
+            openDashboard();
+        }
+    }).catch(function(error) {
+        console.error("Erro no Login por Redirecionamento:", error);
     });
 }
 
@@ -2086,37 +2176,18 @@ function loginGoogle() {
     }
 
     var provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).then(async function(result) {
-        var user = result.user;
-        try {
-            var userRef = db.collection("users").doc(user.uid);
-            var snap = await userRef.get();
-            if (snap.exists) {
-                await userRef.update({
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    loginCount: firebase.firestore.FieldValue.increment(1),
-                    displayName: user.displayName,
-                    photoURL: user.photoURL,
-                    email: user.email
-                });
-            } else {
-                await userRef.set({
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    loginCount: 1
-                });
-            }
-        } catch(e) {
-            console.error("Error saving user data", e);
-        }
-        openDashboard();
-    }).catch(function(error) {
-        alert("Erro no Login: " + error.message);
-    });
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isIOS) {
+        // Redirecionamento para evitar bloqueio de popup no Safari/iOS
+        firebase.auth().signInWithRedirect(provider);
+    } else {
+        firebase.auth().signInWithPopup(provider).then(function(result) {
+            openDashboard();
+        }).catch(function(error) {
+            alert("Erro no Login: " + error.message);
+        });
+    }
 }
 
 function logout() {

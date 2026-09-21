@@ -318,15 +318,33 @@
 
     <!-- VIEW CLIENTES -->
     <div id="view-clientes" style="display: none;">
-        <div class="stats-grid" style="grid-template-columns: 1fr;">
-            <div class="stat-card" style="text-align: left; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div class="lbl" style="margin-bottom: 4px;">Total de Usuários Registrados</div>
-                    <div class="val" id="stat-total-users" style="color: var(--accent);">0</div>
-                </div>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:20px;">
+            <div class="stat-card">
+                <div class="val" id="stat-total-users" style="color: var(--accent);">0</div>
+                <div class="lbl">Usuários Registrados</div>
+            </div>
+            <div class="stat-card">
+                <div class="val" id="stat-total-anons" style="color: #9ca3af;">0</div>
+                <div class="lbl">Visitantes Anônimos</div>
+            </div>
+            <div class="stat-card">
+                <div class="val" id="stat-conversion" style="color: var(--success);">0%</div>
+                <div class="lbl">Taxa de Conversão</div>
             </div>
         </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-weight:400;">Lista de Tráfego</h3>
+            <div style="display:flex; gap:8px;">
+                <button class="cat-btn on" id="btn-filter-users" onclick="filterTraffic('users')" style="padding:6px 12px; font-size:12px; min-width:auto;">Registrados</button>
+                <button class="cat-btn" id="btn-filter-anons" onclick="filterTraffic('anons')" style="padding:6px 12px; font-size:12px; min-width:auto;">Anônimos</button>
+            </div>
+        </div>
+        
         <div class="booking-list" id="clientes-container">
+            <!-- Rendered via JS -->
+        </div>
+        <div class="booking-list" id="anons-container" style="display:none;">
             <!-- Rendered via JS -->
         </div>
     </div>
@@ -650,55 +668,140 @@
     }
 
     /* ════════ CLIENTES (USUÁRIOS) ════════ */
+    function filterTraffic(type) {
+        document.getElementById('btn-filter-users').classList.remove('on');
+        document.getElementById('btn-filter-anons').classList.remove('on');
+        
+        if(type === 'users') {
+            document.getElementById('btn-filter-users').classList.add('on');
+            document.getElementById('clientes-container').style.display = 'flex';
+            document.getElementById('anons-container').style.display = 'none';
+        } else {
+            document.getElementById('btn-filter-anons').classList.add('on');
+            document.getElementById('clientes-container').style.display = 'none';
+            document.getElementById('anons-container').style.display = 'flex';
+        }
+    }
+
+    async function toggleBlockUser(uid, collection, isBlocked) {
+        if (!confirm("Tem certeza que deseja " + (isBlocked ? "DESBLOQUEAR" : "BLOQUEAR") + " este usuário?")) return;
+        try {
+            await db.collection(collection).doc(uid).update({
+                blocked: !isBlocked
+            });
+            showToast("Status atualizado com sucesso!", "success");
+            loadClientes();
+        } catch(e) {
+            console.error("Error updating block status", e);
+            showToast("Erro ao atualizar status", "error");
+        }
+    }
+
     async function loadClientes() {
         const container = document.getElementById("clientes-container");
+        const anonContainer = document.getElementById("anons-container");
         container.innerHTML = "<div class='empty-state'>Carregando clientes...</div>";
+        anonContainer.innerHTML = "<div class='empty-state'>Carregando visitantes...</div>";
 
         if (!isFirebaseEnabled) {
             container.innerHTML = "<div class='empty-state'>Firebase não configurado.</div>";
+            anonContainer.innerHTML = "<div class='empty-state'>Firebase não configurado.</div>";
             document.getElementById("stat-total-users").textContent = "0";
             return;
         }
 
         try {
-            const snap = await db.collection("users").orderBy("lastLogin", "desc").get();
-            if (snap.empty) {
+            let totalUsers = 0;
+            let totalAnons = 0;
+            
+            // 1. Load Registered Users
+            const snapUsers = await db.collection("users").orderBy("lastLogin", "desc").get();
+            if (snapUsers.empty) {
                 container.innerHTML = "<div class='empty-state'>Nenhum cliente registrado ainda.</div>";
-                document.getElementById("stat-total-users").textContent = "0";
-                return;
+            } else {
+                container.innerHTML = "";
+                totalUsers = snapUsers.size;
+                snapUsers.forEach(doc => {
+                    let u = doc.data();
+                    let lastLoginStr = "Desconhecido";
+                    if (u.lastLogin && u.lastLogin.toDate) {
+                        let d = u.lastLogin.toDate();
+                        lastLoginStr = d.toLocaleDateString('pt-BR') + " às " + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    
+                    let html = `
+                        <div class="booking-card" style="justify-content: flex-start; opacity: ${u.blocked ? '0.5' : '1'};">
+                            <img src="${u.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(u.displayName||'U')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--border);">
+                            <div class="b-info" style="flex:1; margin-left:16px;">
+                                <div class="b-car" style="display:flex; align-items:center; gap:8px;">
+                                    ${u.displayName || "Usuário Sem Nome"}
+                                    <span class="badge" style="background:rgba(14,165,233,0.1); color:var(--accent); font-size:10px;">${u.loginCount || 1} acessos</span>
+                                    ${u.blocked ? '<span class="badge" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); font-size:10px; border:1px solid rgba(239,68,68,0.2);">BLOQUEADO</span>' : ''}
+                                </div>
+                                <div class="b-details" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                                    <span>📧 ${u.email || "Sem e-mail"}</span>
+                                    <span>🕒 Último acesso: ${lastLoginStr}</span>
+                                </div>
+                            </div>
+                            <button onclick="toggleBlockUser('${doc.id}', 'users', ${u.blocked||false})" style="background:transparent; border:1px solid ${u.blocked ? 'var(--accent)' : 'var(--danger)'}; color:${u.blocked ? 'var(--accent)' : 'var(--danger)'}; padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; font-family:'Outfit',sans-serif;">
+                                ${u.blocked ? 'Desbloquear' : 'Bloquear'}
+                            </button>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
             }
 
-            container.innerHTML = "";
-            document.getElementById("stat-total-users").textContent = snap.size;
-
-            snap.forEach(doc => {
-                let u = doc.data();
-                let lastLoginStr = "Desconhecido";
-                if (u.lastLogin && u.lastLogin.toDate) {
-                    let d = u.lastLogin.toDate();
-                    lastLoginStr = d.toLocaleDateString('pt-BR') + " às " + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                }
-                
-                let html = `
-                    <div class="booking-card" style="justify-content: flex-start;">
-                        <img src="${u.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(u.displayName||'U')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--border);">
-                        <div class="b-info" style="flex:1; margin-left:16px;">
-                            <div class="b-car" style="display:flex; align-items:center; gap:8px;">
-                                ${u.displayName || "Usuário Sem Nome"}
-                                <span class="badge" style="background:rgba(14,165,233,0.1); color:var(--accent); font-size:10px;">${u.loginCount || 1} logins</span>
+            // 2. Load Anonymous Visitors
+            const snapAnons = await db.collection("anonymous_users").orderBy("lastVisit", "desc").limit(50).get();
+            if (snapAnons.empty) {
+                anonContainer.innerHTML = "<div class='empty-state'>Nenhum visitante anônimo ainda.</div>";
+            } else {
+                anonContainer.innerHTML = "";
+                totalAnons = snapAnons.size;
+                snapAnons.forEach(doc => {
+                    let u = doc.data();
+                    let lastLoginStr = "Desconhecido";
+                    if (u.lastVisit && u.lastVisit.toDate) {
+                        let d = u.lastVisit.toDate();
+                        lastLoginStr = d.toLocaleDateString('pt-BR') + " às " + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    
+                    let html = `
+                        <div class="booking-card" style="justify-content: flex-start; opacity: ${u.blocked ? '0.5' : '1'};">
+                            <div style="width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,0.05); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:20px;">👻</div>
+                            <div class="b-info" style="flex:1; margin-left:16px;">
+                                <div class="b-car" style="display:flex; align-items:center; gap:8px;">
+                                    ${u.uid || "Visitante Anônimo"}
+                                    <span class="badge" style="background:rgba(255, 255, 255, 0.1); color:var(--text-secondary); font-size:10px;">${u.visitCount || 1} acessos</span>
+                                    ${u.blocked ? '<span class="badge" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); font-size:10px; border:1px solid rgba(239,68,68,0.2);">BLOQUEADO</span>' : ''}
+                                </div>
+                                <div class="b-details" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                                    <span>🕒 Último acesso: ${lastLoginStr}</span>
+                                </div>
                             </div>
-                            <div class="b-details" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
-                                <span>📧 ${u.email || "Sem e-mail"}</span>
-                                <span>🕒 Último acesso: ${lastLoginStr}</span>
-                            </div>
+                            <button onclick="toggleBlockUser('${doc.id}', 'anonymous_users', ${u.blocked||false})" style="background:transparent; border:1px solid ${u.blocked ? 'var(--accent)' : 'var(--danger)'}; color:${u.blocked ? 'var(--accent)' : 'var(--danger)'}; padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; font-family:'Outfit',sans-serif;">
+                                ${u.blocked ? 'Desbloquear' : 'Bloquear'}
+                            </button>
                         </div>
-                    </div>
-                `;
-                container.innerHTML += html;
-            });
+                    `;
+                    anonContainer.innerHTML += html;
+                });
+            }
+
+            document.getElementById("stat-total-users").textContent = totalUsers;
+            document.getElementById("stat-total-anons").textContent = totalAnons + (totalAnons === 50 ? "+" : "");
+            
+            let conversion = 0;
+            if((totalUsers + totalAnons) > 0) {
+                conversion = Math.round((totalUsers / (totalUsers + totalAnons)) * 100);
+            }
+            document.getElementById("stat-conversion").textContent = conversion + "%";
+
         } catch (e) {
             console.error("Firebase error loading users", e);
-            container.innerHTML = "<div class='empty-state'>Erro ao carregar clientes.</div>";
+            container.innerHTML = "<div class='empty-state'>Erro ao carregar dados.</div>";
+            anonContainer.innerHTML = "<div class='empty-state'>Erro ao carregar dados.</div>";
         }
     }
 
