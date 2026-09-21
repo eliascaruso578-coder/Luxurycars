@@ -2274,29 +2274,50 @@ async function renderDashboard() {
     }
 
     let completedWashes = bks.filter(b => b.status === "completed").length;
-    let cuponesGanhados = Math.floor(completedWashes / 2);
+    let couponCosts = [2, 5, 8, 10]; // Coste de lavadas por cada cupón
+    let cuponesGanhados = 0;
+    let washesLeft = completedWashes;
+    let currentTier = 0;
+    let progressoTotal = 2;
+
+    // Calcular cuántos cupones ganó y cuál es la meta actual
+    while (true) {
+        let cost = currentTier < couponCosts.length ? couponCosts[currentTier] : couponCosts[couponCosts.length - 1];
+        if (washesLeft >= cost) {
+            cuponesGanhados++;
+            washesLeft -= cost;
+            currentTier++;
+        } else {
+            progressoTotal = cost;
+            break;
+        }
+    }
+
+    let faltan = progressoTotal - washesLeft;
+    let progressoAtual = washesLeft;
+    let pct = (progressoAtual / progressoTotal) * 100;
+
     let couponsHTML = "";
     if (cuponesGanhados > 0) {
         couponsHTML = `
             <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
-                <div style="font-size: 14px; font-weight: 500; color: var(--accent); margin-bottom: 8px;">🎁 Cupons Ganhados (${cuponesGanhados})</div>
+                <div style="font-size: 14px; font-weight: 500; color: var(--accent); margin-bottom: 8px;">🎁 Cupons Desbloqueados (${cuponesGanhados})</div>
                 <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 24px; font-weight: bold; color: var(--accent); letter-spacing: 2px;">LUXURY8</div>
-                    <div style="font-size: 12px; color: var(--text); margin-top: 4px;">Você tem 8% de desconto! Apresente este código no seu próximo serviço.</div>
-                </div>
-            </div>
-        `;
-    } else {
-        let faltan = 2 - (completedWashes % 2);
-        couponsHTML = `
-            <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
-                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Falta ${faltan} lavagem(ns) para ganhar um cupom de 8% de desconto!</div>
-                <div style="width: 100%; height: 6px; background: #222; border-radius: 4px; overflow: hidden;">
-                    <div style="width: ${(completedWashes % 2) * 50}%; height: 100%; background: var(--accent); transition: width 0.5s ease;"></div>
+                    <div style="font-size: 12px; color: var(--text); margin-top: 4px;">Você ganhou 8% de desconto! Use este código no seu próximo serviço.</div>
                 </div>
             </div>
         `;
     }
+    
+    couponsHTML += `
+        <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Faltam ${faltan} lavagem(ns) para ganhar o próximo cupom de 8% OFF!</div>
+            <div style="width: 100%; height: 6px; background: #222; border-radius: 4px; overflow: hidden;">
+                <div style="width: ${pct}%; height: 100%; background: var(--accent); transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+    `;
 
     document.getElementById("dashStats").innerHTML = `
         <div style="background: var(--surface-hover); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
