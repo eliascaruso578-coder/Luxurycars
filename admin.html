@@ -448,7 +448,7 @@
         if (isFirebaseEnabled) {
             try {
                 const snap = await db.collection("bookings")
-                    .where("status", "in", ["completed", "cancelled"])
+                    .where("status", "in", ["completed", "cancelled", "archived"])
                     .get();
                 snap.forEach(doc => bookings.push({ id: doc.id, ...doc.data() }));
                 // Ordenar en JS
@@ -928,7 +928,10 @@
                     .where("date", "==", date)
                     .get();
                 snap.forEach(doc => {
-                    bookings.push({ id: doc.id, ...doc.data() });
+                    let d = doc.data();
+                    if (d.status !== "archived") {
+                        bookings.push({ id: doc.id, ...d });
+                    }
                 });
                 bookings.sort((a, b) => a.time.localeCompare(b.time));
             } catch (e) {
@@ -945,7 +948,7 @@
     // Mock data reader for localStorage fallback
     function loadLocalBookingsMock(date) {
         let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
-        let arr = details.filter(b => b.date === date);
+        let arr = details.filter(b => b.date === date && b.status !== "archived");
         
         // Fallback para agendamentos antigos salvos apenas como contagem (sem dados completos)
         let b = JSON.parse(localStorage.getItem("lux_bookings") || "{}");
@@ -1061,18 +1064,21 @@
         if (newStatus === "delete") {
             if (isFirebaseEnabled) {
                 try {
-                    await db.collection("bookings").doc(id).delete();
+                    await db.collection("bookings").doc(id).update({ status: "archived" });
                 } catch (e) {
-                    showToast("Erro ao excluir: " + e.message, "error");
+                    showToast("Erro ao arquivar: " + e.message, "error");
                     return;
                 }
             } else {
                 let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
-                details = details.filter(b => b.id !== id);
-                localStorage.setItem("lux_bookings_details", JSON.stringify(details));
+                let idx = details.findIndex(b => b.id === id);
+                if (idx >= 0) {
+                    details[idx].status = "archived";
+                    localStorage.setItem("lux_bookings_details", JSON.stringify(details));
+                }
             }
             loadBookings();
-            showToast("Agendamento excluído do sistema.", "success");
+            showToast("Agendamento ocultado desta tela (salvo no histórico).", "success");
             return;
         }
 

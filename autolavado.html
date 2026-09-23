@@ -1173,6 +1173,9 @@ function selectPkg(el) {
     document.getElementById("pkg-mult").value     = el.dataset.mult;
     document.getElementById("pkg-name-val").value = el.dataset.pkg;
     calcularTotal();
+    if (document.getElementById("fecha-agendamento").value) {
+        renderSlots();
+    }
 }
 
 /* ════════ CAR SEARCH ════════ */
@@ -1398,11 +1401,14 @@ var OPEN_MINUTES = 8 * 60;   // 08:00
 var CLOSE_MINUTES = 18 * 60; // 18:00
 var selDuration = 90;
 
-function getCarDuration(type) {
-    if (type === 'sedan') return 90;  // 1.5h
-    if (type === 'suv') return 120;   // 2.0h
-    if (type === 'truck') return 150; // 2.5h
-    return 90;
+function getCarDuration(type, pkg) {
+    let tExt = 30; let tInt = 35; let tComp = 90;
+    if (type === 'suv') { tExt = 30; tInt = 40; tComp = 120; }
+    if (type === 'truck') { tExt = 50; tInt = 40; tComp = 150; }
+    
+    if (pkg === "Apenas Exterior") return tExt;
+    if (pkg === "Apenas Interior") return tInt;
+    return tComp; // Lavagem Completa
 }
 
 function timeToMinutes(timeStr) {
@@ -1509,7 +1515,9 @@ async function renderSlots() {
         }
     });
 
-    let myDuration = getCarDuration(currentCar.t);
+    let pkgEl = document.getElementById("pkg-name-val");
+    let selectedPkg = pkgEl ? pkgEl.value : "Lavagem Completa";
+    let myDuration = getCarDuration(currentCar.t, selectedPkg);
 
     // Determine if the selected date is today to block past hours
     let isToday = false;
@@ -1930,7 +1938,7 @@ async function enviarAgendamentoWhatsApp() {
             });
             
             if (alreadyBooked) {
-                showToast("❌ Ya tienes un agendamiento para este mismo vehículo el día de hoy.");
+                showToast("❌ Você já tem um agendamento para este mesmo veículo no dia de hoje.");
                 return;
             }
             
@@ -1943,7 +1951,7 @@ async function enviarAgendamentoWhatsApp() {
             }
             
             if(!fits) {
-                showToast("¡Lo sentimos! Alguien más acaba de reservar este horario hace unos segundos. Por favor, elige otro.");
+                showToast("Desculpe! Alguém acabou de reservar este horário há alguns segundos. Por favor, escolha outro.");
                 renderSlots(); // Reload calendar
                 return; // Stop saving
             }
