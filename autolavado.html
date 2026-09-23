@@ -1104,7 +1104,7 @@ var SVCS = [
     {l:"Remoção chuva ácida",                                   p:20},
     {l:"Cristalização dos vidros",                              p:45},
     {l:"Cera — brilho e proteção até 15 dias",                  p:25},
-    {l:"Vonixx Hidrorepelente — brilho e proteção até 6 meses", p:50},
+    {l:"Cera Cadillac — brilho e proteção até 6 meses", p:50},
     {l:"Revitalização de pintura — queimada ou fosca, até 9 meses", p:149.99},
     {l:"Proteção SiO₂ PRO Vonixx",                             p:60,  sub:"Brilho intenso, toque liso e proteção duradoura para a pintura."},
     {l:"Limpeza do teto",                                       p:90},
@@ -1534,7 +1534,7 @@ async function renderSlots() {
         }
 
         let fits = maxAvailable > 0;
-        let bufferMins = 120; // 2 horas de anticipación mínima
+        let bufferMins = 0; // 0 minutos de anticipación mínima
         
         if (isToday && m < currentMins + bufferMins) {
             fits = false; // Block if the slot has already passed today or is too soon
@@ -2033,21 +2033,21 @@ async function enviarAgendamentoWhatsApp() {
         saveBookingLocal(date, selSlot, fullData);
     }
     
-    var msg =
-        "*NOVO AGENDAMENTO - LUXURY CARS*%0A%0A" +
-        "%F0%9F%91%A4 *Cliente:* " + encodeURIComponent(cName) + "%0A" +
-        "%F0%9F%93%B1 *Contato:* " + encodeURIComponent(cPhone) + "%0A" +
-        "%F0%9F%93%85 *Data:* " + dFmt + "%0A" +
-        "%E2%8F%B0 *Hor%C3%A1rio:* " + selSlot + "%0A" +
-        "%F0%9F%9A%97 *Ve%C3%ADculo:* " + encodeURIComponent(car) + "%0A" +
-        (cObs ? "%F0%9F%93%9D *Obs:* " + encodeURIComponent(cObs) + "%0A" : "") +
-        "%F0%9F%A7%BC *Pacote:* " + encodeURIComponent(pkg) + "%0A" +
-        "%E2%9E%95 *Adicionais:* " + (extras.length ? encodeURIComponent(extras.join(", ")) : "Nenhum") + "%0A" +
-        (activeCouponCode ? "%F0%9F%8F%B7 *Cupom:* " + encodeURIComponent(activeCouponCode + " (" + Math.round(descontoAtivo*100) + "% OFF)") + "%0A" : "") +
-        "%F0%9F%92%B3 *Pagamento:* " + encodeURIComponent(paymentMethod) + "%0A%0A" +
-        "%F0%9F%92%B0 *Total:* " + encodeURIComponent(total);
+    var rawMsg = 
+        "*NOVO AGENDAMENTO - LUXURY CARS*\n\n" +
+        "*Cliente:* " + cName + "\n" +
+        "*Contato:* " + cPhone + "\n" +
+        "*Data:* " + dFmt + "\n" +
+        "*Hor\xE1rio:* " + selSlot + "\n" +
+        "*Ve\xEDculo:* " + car + "\n" +
+        (cObs ? "*Observa\xE7\xE3o:* " + cObs + "\n" : "") +
+        "*Pacote:* " + pkg + "\n" +
+        "*Adicionais:* " + (extras.length ? extras.join(", ") : "Nenhum") + "\n" +
+        (activeCouponCode ? "*Cupom:* " + activeCouponCode + " (" + Math.round(descontoAtivo*100) + "% OFF)\n" : "") +
+        "*Pagamento:* " + paymentMethod + "\n\n" +
+        "*Total:* " + total;
 
-    window.open("https://wa.me/5549998099736?text=" + msg, "_blank");
+    window.open("https://wa.me/5549998099736?text=" + encodeURIComponent(rawMsg), "_blank");
     
     renderSlots();
 }
