@@ -1020,6 +1020,10 @@
                     <button class="btn btn-success" onclick="openConfirmModal('${b.id}', 'completed', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Concluir</button>
                     <button class="btn btn-danger" onclick="openConfirmModal('${b.id}', 'cancelled', '${phoneStr}', '${b.clientName}', '${b.date}', '${b.time}')">Cancelar</button>
                 `;
+            } else if (b.status === "completed" || b.status === "cancelled") {
+                acts = `
+                    <button class="btn" style="background:#555; color:#fff; border-color:#444;" onclick="openConfirmModal('${b.id}', 'delete', '', '', '${b.date}', '${b.time}')">Excluir</button>
+                `;
             }
 
             let dur = b.duration || 90;
@@ -1054,6 +1058,24 @@
     }
 
     async function updateStatus(id, newStatus, phone, name, date, time) {
+        if (newStatus === "delete") {
+            if (isFirebaseEnabled) {
+                try {
+                    await db.collection("bookings").doc(id).delete();
+                } catch (e) {
+                    showToast("Erro ao excluir: " + e.message, "error");
+                    return;
+                }
+            } else {
+                let details = JSON.parse(localStorage.getItem("lux_bookings_details") || "[]");
+                details = details.filter(b => b.id !== id);
+                localStorage.setItem("lux_bookings_details", JSON.stringify(details));
+            }
+            loadBookings();
+            showToast("Agendamento excluído do sistema.", "success");
+            return;
+        }
+
         if (isFirebaseEnabled) {
             try {
                 await db.collection("bookings").doc(id).update({ status: newStatus });

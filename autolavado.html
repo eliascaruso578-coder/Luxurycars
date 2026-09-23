@@ -1914,9 +1914,13 @@ async function enviarAgendamentoWhatsApp() {
                 .get();
                 
             let tempUsage = {};
+            let alreadyBooked = false;
             checkSnap.forEach(doc => {
                 let b = doc.data();
                 if (b.status === "confirmed" || b.status === "pending") {
+                    if (b.clientPhone === cPhone && b.car === car) {
+                        alreadyBooked = true;
+                    }
                     let startMins = timeToMinutes(b.time);
                     let dur = b.duration || 90;
                     for (let m = startMins; m < startMins + dur; m += 30) {
@@ -1924,6 +1928,11 @@ async function enviarAgendamentoWhatsApp() {
                     }
                 }
             });
+            
+            if (alreadyBooked) {
+                showToast("❌ Ya tienes un agendamiento para este mismo vehículo el día de hoy.");
+                return;
+            }
             
             let reqStart = timeToMinutes(selSlot);
             let fits = true;
